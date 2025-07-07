@@ -596,10 +596,9 @@ func (cc *CodeChecker) checkPython(filename, line string, lineNumber int) []mode
 	// Check for unused imports (basic check)
 	if regexp.MustCompile(`^import\s+`).MatchString(line) {
 		importName := cc.extractImportName(line)
-		if importName != "" {
-			// This would need more context to properly check if used
-			// For now, just flag potentially unused imports
-		}
+		// TODO: Implement unused import detection
+		// This would need more context to properly check if used
+		_ = importName // Acknowledge variable to avoid unused variable warning
 	}
 	
 	return issues

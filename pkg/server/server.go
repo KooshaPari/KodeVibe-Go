@@ -477,7 +477,10 @@ func (s *Server) handleWebSocket(c *gin.Context) {
 		"client_id": clientID,
 		"message": "Connected to KodeVibe",
 	}
-	conn.WriteJSON(welcome)
+	if err := conn.WriteJSON(welcome); err != nil {
+		s.logger.Errorf("Failed to send welcome message: %v", err)
+		return
+	}
 
 	// Handle messages
 	for {
@@ -490,10 +493,13 @@ func (s *Server) handleWebSocket(c *gin.Context) {
 		}
 
 		// Echo message back (for now)
-		conn.WriteJSON(gin.H{
+		if err := conn.WriteJSON(gin.H{
 			"type": "echo",
 			"data": msg,
-		})
+		}); err != nil {
+			s.logger.Errorf("Failed to send echo message: %v", err)
+			break
+		}
 	}
 }
 

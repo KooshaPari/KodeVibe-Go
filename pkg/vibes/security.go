@@ -20,6 +20,7 @@ type SecurityChecker struct {
 	secretPatterns   []*SecretPattern
 	vulnerabilityDB  *VulnerabilityDB
 	entropyThreshold float64
+	testContent      map[string]string // For testing purposes
 }
 
 // SecretPattern represents a pattern for detecting secrets
@@ -123,19 +124,30 @@ func (sc *SecurityChecker) Check(ctx context.Context, files []string) ([]models.
 // checkFile performs security checks on a single file
 func (sc *SecurityChecker) checkFile(filename string) ([]models.Issue, error) {
 	var issues []models.Issue
+	var lines []string
 	
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+	// Check if we have test content for this file
+	if sc.testContent != nil && sc.testContent[filename] != "" {
+		lines = strings.Split(sc.testContent[filename], "\n")
+	} else {
+		file, err := os.Open(filename)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open file: %w", err)
+		}
+		defer file.Close()
+		
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			lines = append(lines, scanner.Text())
+		}
+		
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("error reading file: %w", err)
+		}
 	}
-	defer file.Close()
 	
-	scanner := bufio.NewScanner(file)
-	lineNumber := 0
-	
-	for scanner.Scan() {
-		lineNumber++
-		line := scanner.Text()
+	for lineNumber, line := range lines {
+		lineNumber++ // Make it 1-based
 		
 		// Check for secrets
 		secretIssues := sc.checkLineForSecrets(filename, line, lineNumber)
@@ -152,10 +164,6 @@ func (sc *SecurityChecker) checkFile(filename string) ([]models.Issue, error) {
 		// Check for high entropy strings
 		entropyIssues := sc.checkLineForHighEntropy(filename, line, lineNumber)
 		issues = append(issues, entropyIssues...)
-	}
-	
-	if err := scanner.Err(); err != nil {
-		return issues, fmt.Errorf("error reading file: %w", err)
 	}
 	
 	return issues, nil

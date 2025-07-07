@@ -20,11 +20,14 @@ import (
 
 // Scanner represents the main scanning engine
 type Scanner struct {
-	config       *models.Configuration
-	vibeRegistry *vibes.Registry
-	logger       *logrus.Logger
-	cache        *utils.Cache
-	metrics      *utils.Metrics
+	config         *models.Configuration
+	vibeRegistry   *vibes.Registry
+	logger         *logrus.Logger
+	cache          *utils.Cache
+	metrics        *utils.Metrics
+	maxConcurrency int
+	timeout        time.Duration
+	vibes          []string
 }
 
 // NewScanner creates a new scanner instance
@@ -53,11 +56,14 @@ func NewScanner(config *models.Configuration, logger *logrus.Logger) (*Scanner, 
 	metrics := utils.NewMetrics()
 	
 	return &Scanner{
-		config:       config,
-		vibeRegistry: registry,
-		logger:       logger,
-		cache:        cache,
-		metrics:      metrics,
+		config:         config,
+		vibeRegistry:   registry,
+		logger:         logger,
+		cache:          cache,
+		metrics:        metrics,
+		maxConcurrency: config.Scanner.MaxConcurrency,
+		timeout:        time.Duration(config.Scanner.Timeout) * time.Second,
+		vibes:          config.Scanner.EnabledVibes,
 	}, nil
 }
 
@@ -107,7 +113,11 @@ func (s *Scanner) Scan(ctx context.Context, request *models.ScanRequest) (*model
 	}).Info("File discovery completed")
 	
 	// Determine which vibes to run
-	vibesToRun := s.getVibesToRun(request.Vibes)
+	var vibeTypes []models.VibeType
+	for _, v := range request.Vibes {
+		vibeTypes = append(vibeTypes, models.VibeType(v))
+	}
+	vibesToRun := s.getVibesToRun(vibeTypes)
 	
 	// Run vibe checks concurrently
 	issues, err := s.runVibeChecks(ctx, filteredFiles, vibesToRun)
@@ -127,9 +137,9 @@ func (s *Scanner) Scan(ctx context.Context, request *models.ScanRequest) (*model
 		"scan_id":      scanID,
 		"duration":     result.Duration,
 		"total_issues": len(issues),
-		"errors":       result.Summary.ErrorCount,
-		"warnings":     result.Summary.WarningCount,
-		"info":         result.Summary.InfoCount,
+		"errors":       result.Summary.ErrorIssues,
+		"warnings":     result.Summary.WarningIssues,
+		"info":         result.Summary.InfoIssues,
 	}).Info("Scan completed")
 	
 	// Update metrics
@@ -435,22 +445,25 @@ func (s *Scanner) generateSummary(issues []models.Issue) models.ScanSummary {
 		summary.IssuesBySeverity[issue.Severity]++
 		
 		switch issue.Severity {
+		case models.SeverityCritical:
+			summary.CriticalIssues++
 		case models.SeverityError:
-			summary.ErrorCount++
+			summary.ErrorIssues++
 		case models.SeverityWarning:
-			summary.WarningCount++
+			summary.WarningIssues++
 		case models.SeverityInfo:
-			summary.InfoCount++
+			summary.InfoIssues++
 		}
 	}
 	
 	// Calculate score (higher is better)
 	totalPossibleScore := 100.0
-	errorPenalty := float64(summary.ErrorCount) * 10.0
-	warningPenalty := float64(summary.WarningCount) * 5.0
-	infoPenalty := float64(summary.InfoCount) * 1.0
+	criticalPenalty := float64(summary.CriticalIssues) * 25.0
+	errorPenalty := float64(summary.ErrorIssues) * 10.0
+	warningPenalty := float64(summary.WarningIssues) * 5.0
+	infoPenalty := float64(summary.InfoIssues) * 1.0
 	
-	summary.Score = totalPossibleScore - errorPenalty - warningPenalty - infoPenalty
+	summary.Score = totalPossibleScore - criticalPenalty - errorPenalty - warningPenalty - infoPenalty
 	if summary.Score < 0 {
 		summary.Score = 0
 	}
@@ -499,10 +512,16 @@ func (s *Scanner) ClearCache() {
 
 // ScanFile scans a single file
 func (s *Scanner) ScanFile(ctx context.Context, filePath string, vibes []models.VibeType) ([]models.Issue, error) {
+	// Convert VibeType slice to string slice
+	vibeStrings := make([]string, len(vibes))
+	for i, vibe := range vibes {
+		vibeStrings[i] = string(vibe)
+	}
+	
 	request := &models.ScanRequest{
 		ID:    uuid.New().String(),
 		Paths: []string{filePath},
-		Vibes: vibes,
+		Vibes: vibeStrings,
 	}
 	
 	result, err := s.Scan(ctx, request)
@@ -554,4 +573,18 @@ func (s *Scanner) ValidateConfiguration() error {
 	}
 	
 	return nil
+}
+
+// shouldIgnore checks if a file should be ignored based on patterns
+func (s *Scanner) shouldIgnore(path string) bool {
+	for _, pattern := range s.config.Scanner.ExcludePatterns {
+		if matched, _ := filepath.Match(pattern, filepath.Base(path)); matched {
+			return true
+		}
+		// Also check against the full path for patterns like "node_modules/*"
+		if matched, _ := filepath.Match(pattern, path); matched {
+			return true
+		}
+	}
+	return false
 }

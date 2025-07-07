@@ -195,14 +195,20 @@ func runScan(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create scanner: %w", err)
 	}
 
+	// Convert vibes to strings
+	vibeStrings := make([]string, len(vibes))
+	for i, vibe := range vibes {
+		vibeStrings[i] = string(vibe)
+	}
+	
 	// Create scan request
 	request := &models.ScanRequest{
 		Paths:        paths,
-		Vibes:        vibes,
+		Vibes:        vibeStrings,
 		Config:       cfg,
 		StagedOnly:   stagedOnly,
 		DiffTarget:   diffTarget,
-		OutputFormat: outputFormat,
+		Format:       models.ReportFormat(outputFormat),
 		CreatedAt:    time.Now(),
 	}
 
@@ -263,7 +269,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 	if ciMode {
 		if strictMode && len(result.Issues) > 0 {
 			os.Exit(1)
-		} else if result.Summary.ErrorCount > 0 {
+		} else if result.Summary.ErrorIssues > 0 {
 			os.Exit(1)
 		}
 	}
@@ -551,17 +557,17 @@ func showScanSummary(result *models.ScanResult, duration time.Duration) {
 	fmt.Printf("📄 Files scanned: %d\n", result.FilesScanned)
 	fmt.Printf("⚠️  Total issues: %d\n", result.Summary.TotalIssues)
 	
-	if result.Summary.ErrorCount > 0 {
+	if result.Summary.ErrorIssues > 0 {
 		red := color.New(color.FgRed).SprintFunc()
-		fmt.Printf("❌ Errors: %s\n", red(result.Summary.ErrorCount))
+		fmt.Printf("❌ Errors: %s\n", red(result.Summary.ErrorIssues))
 	}
-	if result.Summary.WarningCount > 0 {
+	if result.Summary.WarningIssues > 0 {
 		yellow := color.New(color.FgYellow).SprintFunc()
-		fmt.Printf("⚠️  Warnings: %s\n", yellow(result.Summary.WarningCount))
+		fmt.Printf("⚠️  Warnings: %s\n", yellow(result.Summary.WarningIssues))
 	}
-	if result.Summary.InfoCount > 0 {
+	if result.Summary.InfoIssues > 0 {
 		blue := color.New(color.FgBlue).SprintFunc()
-		fmt.Printf("ℹ️  Info: %s\n", blue(result.Summary.InfoCount))
+		fmt.Printf("ℹ️  Info: %s\n", blue(result.Summary.InfoIssues))
 	}
 	
 	fmt.Printf("📈 Score: %.1f (%s)\n", result.Summary.Score, result.Summary.Grade)
@@ -600,16 +606,16 @@ func generateSummary(issues []models.Issue) models.ScanSummary {
 		
 		switch issue.Severity {
 		case models.SeverityError:
-			summary.ErrorCount++
+			summary.ErrorIssues++
 		case models.SeverityWarning:
-			summary.WarningCount++
+			summary.WarningIssues++
 		case models.SeverityInfo:
-			summary.InfoCount++
+			summary.InfoIssues++
 		}
 	}
 	
 	// Calculate score (100 - penalties)
-	summary.Score = 100.0 - float64(summary.ErrorCount*10) - float64(summary.WarningCount*5) - float64(summary.InfoCount*1)
+	summary.Score = 100.0 - float64(summary.ErrorIssues*10) - float64(summary.WarningIssues*5) - float64(summary.InfoIssues*1)
 	if summary.Score < 0 {
 		summary.Score = 0
 	}

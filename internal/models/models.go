@@ -11,6 +11,7 @@ const (
 	SeverityError   SeverityLevel = "error"
 	SeverityWarning SeverityLevel = "warning"
 	SeverityInfo    SeverityLevel = "info"
+	SeverityCritical SeverityLevel = "critical"
 )
 
 // VibeType represents the type of vibe check
@@ -48,10 +49,12 @@ type Issue struct {
 
 // ScanResult represents the result of a complete scan
 type ScanResult struct {
+	ScanID           string              `json:"scan_id" yaml:"scan_id"`
 	ID               string              `json:"id" yaml:"id"`
 	StartTime        time.Time           `json:"start_time" yaml:"start_time"`
 	EndTime          time.Time           `json:"end_time" yaml:"end_time"`
 	Duration         time.Duration       `json:"duration" yaml:"duration"`
+	Timestamp        time.Time           `json:"timestamp" yaml:"timestamp"`
 	ProjectPath      string              `json:"project_path" yaml:"project_path"`
 	FilesScanned     int                 `json:"files_scanned" yaml:"files_scanned"`
 	FilesSkipped     int                 `json:"files_skipped" yaml:"files_skipped"`
@@ -61,21 +64,11 @@ type ScanResult struct {
 	Metadata         map[string]interface{} `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 }
 
-// ScanSummary provides a summary of scan results
-type ScanSummary struct {
-	TotalIssues       int                      `json:"total_issues" yaml:"total_issues"`
-	ErrorCount        int                      `json:"error_count" yaml:"error_count"`
-	WarningCount      int                      `json:"warning_count" yaml:"warning_count"`
-	InfoCount         int                      `json:"info_count" yaml:"info_count"`
-	IssuesByType      map[VibeType]int         `json:"issues_by_type" yaml:"issues_by_type"`
-	IssuesBySeverity  map[SeverityLevel]int    `json:"issues_by_severity" yaml:"issues_by_severity"`
-	TopIssues         []string                 `json:"top_issues" yaml:"top_issues"`
-	Score             float64                  `json:"score" yaml:"score"`
-	Grade             string                   `json:"grade" yaml:"grade"`
-}
 
 // Configuration represents the KodeVibe configuration
 type Configuration struct {
+	Scanner       ScannerConfig               `json:"scanner" yaml:"scanner"`
+	Server        ServerConfig                `json:"server" yaml:"server"`
 	Vibes         map[VibeType]VibeConfig     `json:"vibes" yaml:"vibes"`
 	Project       ProjectConfig               `json:"project" yaml:"project"`
 	Exclude       ExcludeConfig               `json:"exclude" yaml:"exclude"`
@@ -267,14 +260,14 @@ type LoggingConfig struct {
 
 // ScanRequest represents a request to scan files
 type ScanRequest struct {
-	ID           string        `json:"id" yaml:"id"`
-	Paths        []string      `json:"paths" yaml:"paths"`
-	Vibes        []VibeType    `json:"vibes" yaml:"vibes"`
-	Config       *Configuration `json:"config,omitempty" yaml:"config,omitempty"`
-	StagedOnly   bool          `json:"staged_only" yaml:"staged_only"`
-	DiffTarget   string        `json:"diff_target,omitempty" yaml:"diff_target,omitempty"`
-	OutputFormat string        `json:"output_format" yaml:"output_format"`
-	CreatedAt    time.Time     `json:"created_at" yaml:"created_at"`
+	ID           string          `json:"id" yaml:"id"`
+	Paths        []string        `json:"paths" yaml:"paths"`
+	Vibes        []string        `json:"vibes" yaml:"vibes"`
+	Config       *Configuration  `json:"config,omitempty" yaml:"config,omitempty"`
+	StagedOnly   bool            `json:"staged_only" yaml:"staged_only"`
+	DiffTarget   string          `json:"diff_target,omitempty" yaml:"diff_target,omitempty"`
+	Format       ReportFormat    `json:"format" yaml:"format"`
+	CreatedAt    time.Time       `json:"created_at" yaml:"created_at"`
 }
 
 // FixResult represents the result of an auto-fix operation
@@ -347,4 +340,158 @@ type MonitoringConfig struct {
 	Grafana    bool   `json:"grafana" yaml:"grafana"`
 	HealthCheck bool  `json:"health_check" yaml:"health_check"`
 	MetricsPath string `json:"metrics_path" yaml:"metrics_path"`
+}
+
+// ReportFormat represents different report output formats
+type ReportFormat string
+
+const (
+	ReportFormatText  ReportFormat = "text"
+	ReportFormatJSON  ReportFormat = "json"
+	ReportFormatHTML  ReportFormat = "html"
+	ReportFormatXML   ReportFormat = "xml"
+	ReportFormatJUnit ReportFormat = "junit"
+	ReportFormatCSV   ReportFormat = "csv"
+)
+
+// ScannerConfig represents scanner configuration
+type ScannerConfig struct {
+	MaxConcurrency  int      `json:"max_concurrency" yaml:"max_concurrency"`
+	Timeout         int      `json:"timeout" yaml:"timeout"`
+	EnabledVibes    []string `json:"enabled_vibes" yaml:"enabled_vibes"`
+	ExcludePatterns []string `json:"exclude_patterns" yaml:"exclude_patterns"`
+}
+
+// Issue validation method
+func (i *Issue) IsValid() bool {
+	if i.Title == "" || i.Message == "" || i.File == "" {
+		return false
+	}
+	if i.Line <= 0 {
+		return false
+	}
+	if i.Confidence < 0 || i.Confidence > 1 {
+		return false
+	}
+	return true
+}
+
+// ScanRequest validation method
+func (sr *ScanRequest) IsValid() bool {
+	if len(sr.Paths) == 0 || len(sr.Vibes) == 0 {
+		return false
+	}
+	for _, path := range sr.Paths {
+		if path == "" {
+			return false
+		}
+	}
+	for _, vibe := range sr.Vibes {
+		if vibe == "" {
+			return false
+		}
+	}
+	return true
+}
+
+// ScanResult helper methods
+func (sr *ScanResult) CalculateSummary() ScanSummary {
+	summary := ScanSummary{
+		TotalIssues:   len(sr.Issues),
+		IssuesByType:  make(map[VibeType]int),
+		FilesScanned:  0,
+	}
+
+	filesMap := make(map[string]bool)
+	
+	for _, issue := range sr.Issues {
+		// Count by severity
+		switch issue.Severity {
+		case SeverityCritical:
+			summary.CriticalIssues++
+		case SeverityError:
+			summary.ErrorIssues++
+		case SeverityWarning:
+			summary.WarningIssues++
+		case SeverityInfo:
+			summary.InfoIssues++
+		}
+
+		// Count by type
+		summary.IssuesByType[issue.Type]++
+
+		// Count unique files
+		filesMap[issue.File] = true
+	}
+
+	summary.FilesScanned = len(filesMap)
+	return summary
+}
+
+func (sr *ScanResult) GetIssuesBySeverity(severity SeverityLevel) []Issue {
+	var result []Issue
+	for _, issue := range sr.Issues {
+		if issue.Severity == severity {
+			result = append(result, issue)
+		}
+	}
+	return result
+}
+
+func (sr *ScanResult) GetIssuesByType(vibeType VibeType) []Issue {
+	var result []Issue
+	for _, issue := range sr.Issues {
+		if issue.Type == vibeType {
+			result = append(result, issue)
+		}
+	}
+	return result
+}
+
+func (sr *ScanResult) GetIssuesByFile(filename string) []Issue {
+	var result []Issue
+	for _, issue := range sr.Issues {
+		if issue.File == filename {
+			result = append(result, issue)
+		}
+	}
+	return result
+}
+
+// Configuration validation method
+func (c *Configuration) IsValid() bool {
+	// Basic scanner validation
+	if c.Scanner.MaxConcurrency <= 0 {
+		return false
+	}
+	if c.Scanner.Timeout < 0 {
+		return false
+	}
+	
+	// Basic server validation
+	if c.Server.Port <= 0 || c.Server.Port > 65535 {
+		return false
+	}
+	
+	return true
+}
+
+// VibeConfig helper method
+func (vc *VibeConfig) IsEnabled() bool {
+	return vc.Enabled
+}
+
+// ScanSummary structure updates
+type ScanSummary struct {
+	TotalIssues       int                      `json:"total_issues" yaml:"total_issues"`
+	CriticalIssues    int                      `json:"critical_issues" yaml:"critical_issues"`
+	ErrorIssues       int                      `json:"error_issues" yaml:"error_issues"`
+	WarningIssues     int                      `json:"warning_issues" yaml:"warning_issues"`
+	InfoIssues        int                      `json:"info_issues" yaml:"info_issues"`
+	FilesScanned      int                      `json:"files_scanned" yaml:"files_scanned"`
+	IssuesByType      map[VibeType]int         `json:"issues_by_type" yaml:"issues_by_type"`
+	IssuesBySeverity  map[SeverityLevel]int    `json:"issues_by_severity" yaml:"issues_by_severity"`
+	TopIssues         []string                 `json:"top_issues" yaml:"top_issues"`
+	Score             float64                  `json:"score" yaml:"score"`
+	Grade             string                   `json:"grade" yaml:"grade"`
 }
