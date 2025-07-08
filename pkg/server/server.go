@@ -7,24 +7,24 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"github.com/google/uuid"
 
 	"kodevibe/internal/models"
-	"kodevibe/pkg/scanner"
 	"kodevibe/pkg/report"
+	"kodevibe/pkg/scanner"
 )
 
 // Server represents the KodeVibe HTTP server
 type Server struct {
-	config    *models.Configuration
-	logger    *logrus.Logger
-	scanner   *scanner.Scanner
-	reporter  *report.Reporter
-	upgrader  websocket.Upgrader
-	clients   map[string]*websocket.Conn
+	config   *models.Configuration
+	logger   *logrus.Logger
+	scanner  *scanner.Scanner
+	reporter *report.Reporter
+	upgrader websocket.Upgrader
+	clients  map[string]*websocket.Conn
 }
 
 // NewServer creates a new HTTP server instance
@@ -174,11 +174,11 @@ func (s *Server) loggingMiddleware() gin.HandlerFunc {
 		}
 
 		s.logger.WithFields(logrus.Fields{
-			"status":     statusCode,
-			"latency":    latency,
-			"client_ip":  clientIP,
-			"method":     method,
-			"path":       path,
+			"status":    statusCode,
+			"latency":   latency,
+			"client_ip": clientIP,
+			"method":    method,
+			"path":      path,
 		}).Info("HTTP request")
 	}
 }
@@ -227,10 +227,10 @@ func (s *Server) createScan(c *gin.Context) {
 
 func (s *Server) getScan(c *gin.Context) {
 	scanID := c.Param("id")
-	
+
 	// TODO: Implement scan storage and retrieval
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": "Scan storage not implemented yet",
+		"error":   "Scan storage not implemented yet",
 		"scan_id": scanID,
 	})
 }
@@ -245,7 +245,7 @@ func (s *Server) listScans(c *gin.Context) {
 
 func (s *Server) deleteScan(c *gin.Context) {
 	scanID := c.Param("id")
-	
+
 	// TODO: Implement scan deletion
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Scan deleted",
@@ -281,7 +281,7 @@ func (s *Server) validateConfig(c *gin.Context) {
 
 	// TODO: Implement proper config validation
 	c.JSON(http.StatusOK, gin.H{
-		"valid": true,
+		"valid":   true,
 		"message": "Configuration is valid",
 	})
 }
@@ -290,16 +290,16 @@ func (s *Server) listReports(c *gin.Context) {
 	// TODO: Implement report listing
 	c.JSON(http.StatusOK, gin.H{
 		"reports": []gin.H{},
-		"total": 0,
+		"total":   0,
 	})
 }
 
 func (s *Server) getReport(c *gin.Context) {
 	reportID := c.Param("id")
-	
+
 	// TODO: Implement report retrieval
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": "Report storage not implemented yet",
+		"error":     "Report storage not implemented yet",
 		"report_id": reportID,
 	})
 }
@@ -307,12 +307,12 @@ func (s *Server) getReport(c *gin.Context) {
 func (s *Server) downloadReport(c *gin.Context) {
 	reportID := c.Param("id")
 	format := c.DefaultQuery("format", "html")
-	
+
 	// TODO: Implement report download
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": "Report download not implemented yet",
+		"error":     "Report download not implemented yet",
 		"report_id": reportID,
-		"format": format,
+		"format":    format,
 	})
 }
 
@@ -335,22 +335,22 @@ func (s *Server) listVibes(c *gin.Context) {
 
 func (s *Server) getVibeInfo(c *gin.Context) {
 	vibeType := c.Param("type")
-	
+
 	// TODO: Get actual vibe info from registry
 	c.JSON(http.StatusOK, gin.H{
-		"type": vibeType,
-		"name": fmt.Sprintf("%sVibe", vibeType),
-		"rules": []gin.H{},
+		"type":     vibeType,
+		"name":     fmt.Sprintf("%sVibe", vibeType),
+		"rules":    []gin.H{},
 		"settings": gin.H{},
 	})
 }
 
 func (s *Server) autoFix(c *gin.Context) {
 	var request struct {
-		Paths    []string `json:"paths"`
-		Rules    []string `json:"rules"`
-		AutoFix  bool     `json:"auto_fix"`
-		Backup   bool     `json:"backup"`
+		Paths   []string `json:"paths"`
+		Rules   []string `json:"rules"`
+		AutoFix bool     `json:"auto_fix"`
+		Backup  bool     `json:"backup"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -369,10 +369,10 @@ func (s *Server) autoFix(c *gin.Context) {
 
 func (s *Server) getFixResult(c *gin.Context) {
 	fixID := c.Param("id")
-	
+
 	// TODO: Implement fix result retrieval
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": "Fix result storage not implemented yet",
+		"error":  "Fix result storage not implemented yet",
 		"fix_id": fixID,
 	})
 }
@@ -392,7 +392,7 @@ func (s *Server) startWatch(c *gin.Context) {
 	// TODO: Implement file watching
 	c.JSON(http.StatusOK, gin.H{
 		"status": "watching",
-		"paths": request.Paths,
+		"paths":  request.Paths,
 	})
 }
 
@@ -407,7 +407,7 @@ func (s *Server) getWatchStatus(c *gin.Context) {
 	// TODO: Implement watch status
 	c.JSON(http.StatusOK, gin.H{
 		"watching": false,
-		"paths": []string{},
+		"paths":    []string{},
 	})
 }
 
@@ -427,17 +427,17 @@ func (s *Server) startProfile(c *gin.Context) {
 	// TODO: Implement profiling
 	c.JSON(http.StatusAccepted, gin.H{
 		"profile_id": profileID,
-		"status": "started",
-		"tool": request.Tool,
+		"status":     "started",
+		"tool":       request.Tool,
 	})
 }
 
 func (s *Server) getProfileResult(c *gin.Context) {
 	profileID := c.Param("id")
-	
+
 	// TODO: Implement profile result retrieval
 	c.JSON(http.StatusNotImplemented, gin.H{
-		"error": "Profile result storage not implemented yet",
+		"error":      "Profile result storage not implemented yet",
 		"profile_id": profileID,
 	})
 }
@@ -473,9 +473,9 @@ func (s *Server) handleWebSocket(c *gin.Context) {
 
 	// Send welcome message
 	welcome := gin.H{
-		"type": "welcome",
+		"type":      "welcome",
 		"client_id": clientID,
-		"message": "Connected to KodeVibe",
+		"message":   "Connected to KodeVibe",
 	}
 	if err := conn.WriteJSON(welcome); err != nil {
 		s.logger.Errorf("Failed to send welcome message: %v", err)

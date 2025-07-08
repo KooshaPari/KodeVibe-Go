@@ -26,7 +26,7 @@ func TestNewScanner(t *testing.T) {
 	logger := logrus.New()
 
 	scanner, err := NewScanner(config, logger)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, scanner)
 	assert.Equal(t, 5, scanner.maxConcurrency)
@@ -38,7 +38,7 @@ func TestScanner_Scan(t *testing.T) {
 	// Create temporary test files
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.js")
-	
+
 	testCode := `
 function test() {
     var x = 1; // Should trigger var usage warning
@@ -46,7 +46,7 @@ function test() {
     return x;
 }
 `
-	
+
 	err := os.WriteFile(testFile, []byte(testCode), 0644)
 	require.NoError(t, err)
 
@@ -76,11 +76,11 @@ function test() {
 	assert.NotNil(t, result)
 	assert.Equal(t, "test-scan-1", result.ScanID)
 	assert.Greater(t, len(result.Issues), 0)
-	
+
 	// Check for expected issues
 	hasConsoleLogIssue := false
 	hasVarIssue := false
-	
+
 	for _, issue := range result.Issues {
 		if issue.Rule == "no-console-log" {
 			hasConsoleLogIssue = true
@@ -89,7 +89,7 @@ function test() {
 			hasVarIssue = true
 		}
 	}
-	
+
 	assert.True(t, hasConsoleLogIssue, "Should detect console.log usage")
 	assert.True(t, hasVarIssue, "Should detect var usage")
 }
@@ -125,7 +125,7 @@ func TestScanner_ScanWithInvalidPaths(t *testing.T) {
 
 func TestScanner_ScanWithContext(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create multiple test files
 	for i := 0; i < 5; i++ {
 		testFile := filepath.Join(tempDir, fmt.Sprintf("test%d.js", i))
@@ -170,19 +170,19 @@ func TestScanner_ScanWithContext(t *testing.T) {
 
 func TestScanner_discoverFiles(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create test file structure
 	subDir := filepath.Join(tempDir, "subdir")
 	err := os.Mkdir(subDir, 0755)
 	require.NoError(t, err)
-	
+
 	files := []string{
 		filepath.Join(tempDir, "test.js"),
 		filepath.Join(tempDir, "test.go"),
 		filepath.Join(subDir, "nested.py"),
 		filepath.Join(tempDir, "ignore.txt"),
 	}
-	
+
 	for _, file := range files {
 		err := os.WriteFile(file, []byte("test content"), 0644)
 		require.NoError(t, err)
@@ -199,7 +199,7 @@ func TestScanner_discoverFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	discoveredFiles, err := scanner.discoverFiles([]string{tempDir}, false, "")
-	
+
 	assert.NoError(t, err)
 	assert.Contains(t, discoveredFiles, filepath.Join(tempDir, "test.js"))
 	assert.Contains(t, discoveredFiles, filepath.Join(tempDir, "test.go"))
@@ -242,7 +242,7 @@ func TestScanner_shouldIgnore(t *testing.T) {
 // Benchmark tests
 func BenchmarkScanner_Scan(b *testing.B) {
 	tempDir := b.TempDir()
-	
+
 	// Create multiple test files
 	for i := 0; i < 10; i++ {
 		testFile := filepath.Join(tempDir, fmt.Sprintf("test%d.js", i))
@@ -277,7 +277,7 @@ function test() {
 	}
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
 		_, err := scanner.Scan(ctx, request)

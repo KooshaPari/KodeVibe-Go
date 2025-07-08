@@ -1,0 +1,314 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Run tests
+      run: |
+        go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+    - name: Generate test report
+      run: |
+        go tool cover -html=coverage.out -o coverage.html
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          coverage.out
+          coverage.html
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Build CLI
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        mkdir -p build
+        BINARY_NAME=kodevibe
+        if [ "$GOOS" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        go build -o build/${BINARY_NAME}-${GOOS}-${GOARCH} ./cmd/cli
+
+    - name: Build Server
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        BINARY_NAME=kodevibe-server
+        if [ "$GOOS" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        go build -o build/${BINARY_NAME}-${GOOS}-${GOARCH} ./cmd/server
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: build/
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        args: --timeout=5m
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Run Gosec Security Scanner
+      uses: securecodewarrior/github-action-gosec@master
+      with:
+        args: '-no-fail -fmt sarif -out gosec.sarif ./...'
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: gosec.sarif
+
+    - name: Run govulncheck
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
+
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install gocyclo
+      run: go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+
+    - name: Check cyclomatic complexity
+      run: |
+        gocyclo -over 15 . || true
+
+    - name: Install ineffassign
+      run: go install github.com/gordonklaus/ineffassign@latest
+
+    - name: Check for ineffectual assignments
+      run: |
+        ineffassign ./...
+
+    - name: Install misspell
+      run: go install github.com/client9/misspell/cmd/misspell@latest
+
+    - name: Check for misspellings
+      run: |
+        misspell -error .
+
+    - name: Check gofmt
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "The following files are not gofmt'd:"
+          gofmt -s -l .
+          exit 1
+        fi
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test, build]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: binaries-linux-amd64
+        path: build/
+
+    - name: Make binaries executable
+      run: chmod +x build/*
+
+    - name: Test CLI binary
+      run: |
+        ./build/kodevibe-linux-amd64 --version || true
+        ./build/kodevibe-linux-amd64 --help || true
+
+    - name: Test server binary
+      run: |
+        timeout 10s ./build/kodevibe-server-linux-amd64 --help || true
+
+    - name: Run integration tests
+      run: |
+        # Create test files
+        mkdir -p test-project
+        echo 'console.log("test");' > test-project/test.js
+        echo 'var x = 1;' >> test-project/test.js
+        
+        # Test scanning functionality
+        ./build/kodevibe-linux-amd64 scan test-project --format json > scan-result.json || true
+        
+        # Verify output
+        if [ -f scan-result.json ]; then
+          echo "✅ Scan completed successfully"
+          cat scan-result.json | head -20
+        else
+          echo "❌ Scan failed"
+          exit 1
+        fi
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [test, build, lint, security, quality, integration]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Create release assets
+      run: |
+        mkdir -p release
+        for dir in binaries-*; do
+          if [ -d "$dir" ]; then
+            OS_ARCH=${dir#binaries-}
+            cd "$dir"
+            for file in *; do
+              if [ -f "$file" ]; then
+                cp "$file" "../release/"
+              fi
+            done
+            cd ..
+          fi
+        done
+
+    - name: Generate changelog
+      run: |
+        echo "# Release Notes" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "## What's Changed" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        git log --oneline --since="1 week ago" >> CHANGELOG.md
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: release/*
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

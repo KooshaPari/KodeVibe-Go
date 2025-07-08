@@ -43,7 +43,7 @@ func NewSecurityChecker() *SecurityChecker {
 		entropyThreshold: 4.5,
 		vulnerabilityDB:  NewVulnerabilityDB(),
 	}
-	
+
 	checker.initializeSecretPatterns()
 	return checker
 }
@@ -61,14 +61,14 @@ func (sc *SecurityChecker) Type() models.VibeType {
 // Configure configures the security checker
 func (sc *SecurityChecker) Configure(config models.VibeConfig) error {
 	sc.config = config
-	
+
 	// Configure entropy threshold
 	if threshold, exists := config.Settings["entropy_threshold"]; exists {
 		if thresholdFloat, ok := threshold.(float64); ok {
 			sc.entropyThreshold = thresholdFloat
 		}
 	}
-	
+
 	return nil
 }
 
@@ -82,13 +82,13 @@ func (sc *SecurityChecker) Supports(filename string) bool {
 		".html", ".htm", ".css", ".scss", ".less", ".md", ".txt", ".env", ".config",
 		".properties", ".ini", ".conf", ".toml", ".sql", ".dockerfile", ".makefile",
 	}
-	
+
 	for _, textExt := range textExtensions {
 		if ext == textExt {
 			return true
 		}
 	}
-	
+
 	// Also check files without extensions
 	return ext == ""
 }
@@ -96,20 +96,20 @@ func (sc *SecurityChecker) Supports(filename string) bool {
 // Check performs security checks on the provided files
 func (sc *SecurityChecker) Check(ctx context.Context, files []string) ([]models.Issue, error) {
 	var issues []models.Issue
-	
+
 	for _, file := range files {
 		if !sc.Supports(file) {
 			continue
 		}
-		
+
 		fileIssues, err := sc.checkFile(file)
 		if err != nil {
 			// Log error but continue with other files
 			continue
 		}
-		
+
 		issues = append(issues, fileIssues...)
-		
+
 		// Check context cancellation
 		select {
 		case <-ctx.Done():
@@ -117,7 +117,7 @@ func (sc *SecurityChecker) Check(ctx context.Context, files []string) ([]models.
 		default:
 		}
 	}
-	
+
 	return issues, nil
 }
 
@@ -125,7 +125,7 @@ func (sc *SecurityChecker) Check(ctx context.Context, files []string) ([]models.
 func (sc *SecurityChecker) checkFile(filename string) ([]models.Issue, error) {
 	var issues []models.Issue
 	var lines []string
-	
+
 	// Check if we have test content for this file
 	if sc.testContent != nil && sc.testContent[filename] != "" {
 		lines = strings.Split(sc.testContent[filename], "\n")
@@ -135,44 +135,44 @@ func (sc *SecurityChecker) checkFile(filename string) ([]models.Issue, error) {
 			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
 		defer file.Close()
-		
+
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			lines = append(lines, scanner.Text())
 		}
-		
+
 		if err := scanner.Err(); err != nil {
 			return nil, fmt.Errorf("error reading file: %w", err)
 		}
 	}
-	
+
 	for lineNumber, line := range lines {
 		lineNumber++ // Make it 1-based
-		
+
 		// Check for secrets
 		secretIssues := sc.checkLineForSecrets(filename, line, lineNumber)
 		issues = append(issues, secretIssues...)
-		
+
 		// Check for vulnerabilities
 		vulnIssues := sc.checkLineForVulnerabilities(filename, line, lineNumber)
 		issues = append(issues, vulnIssues...)
-		
+
 		// Check for hardcoded credentials
 		credIssues := sc.checkLineForHardcodedCredentials(filename, line, lineNumber)
 		issues = append(issues, credIssues...)
-		
+
 		// Check for high entropy strings
 		entropyIssues := sc.checkLineForHighEntropy(filename, line, lineNumber)
 		issues = append(issues, entropyIssues...)
 	}
-	
+
 	return issues, nil
 }
 
 // checkLineForSecrets checks a line for known secret patterns
 func (sc *SecurityChecker) checkLineForSecrets(filename, line string, lineNumber int) []models.Issue {
 	var issues []models.Issue
-	
+
 	for _, pattern := range sc.secretPatterns {
 		matches := pattern.Pattern.FindAllStringSubmatch(line, -1)
 		for _, match := range matches {
@@ -181,37 +181,37 @@ func (sc *SecurityChecker) checkLineForSecrets(filename, line string, lineNumber
 				if sc.isFalsePositive(filename, line, pattern.Name) {
 					continue
 				}
-				
+
 				issue := models.Issue{
-					Type:          models.VibeTypeSecurity,
-					Severity:      models.SeverityError,
-					Title:         fmt.Sprintf("Potential %s detected", pattern.Name),
-					Message:       fmt.Sprintf("Found potential %s: %s", pattern.Name, pattern.Description),
-					File:          filename,
-					Line:          lineNumber,
-					Rule:          fmt.Sprintf("secret-detection-%s", strings.ToLower(strings.ReplaceAll(pattern.Name, " ", "-"))),
-					Pattern:       pattern.Pattern.String(),
-					Context:       utils.TruncateString(line, 100),
-					Fixable:       false,
-					Confidence:    pattern.Confidence,
+					Type:       models.VibeTypeSecurity,
+					Severity:   models.SeverityError,
+					Title:      fmt.Sprintf("Potential %s detected", pattern.Name),
+					Message:    fmt.Sprintf("Found potential %s: %s", pattern.Name, pattern.Description),
+					File:       filename,
+					Line:       lineNumber,
+					Rule:       fmt.Sprintf("secret-detection-%s", strings.ToLower(strings.ReplaceAll(pattern.Name, " ", "-"))),
+					Pattern:    pattern.Pattern.String(),
+					Context:    utils.TruncateString(line, 100),
+					Fixable:    false,
+					Confidence: pattern.Confidence,
 					Metadata: map[string]interface{}{
 						"secret_type": pattern.Name,
 						"match":       match[0],
 					},
 				}
-				
+
 				issues = append(issues, issue)
 			}
 		}
 	}
-	
+
 	return issues
 }
 
 // checkLineForVulnerabilities checks a line for security vulnerabilities
 func (sc *SecurityChecker) checkLineForVulnerabilities(filename, line string, lineNumber int) []models.Issue {
 	var issues []models.Issue
-	
+
 	// SQL Injection patterns
 	sqlInjectionPatterns := []*regexp.Regexp{
 		regexp.MustCompile(`(?i).*query.*\+.*\$`),
@@ -220,52 +220,52 @@ func (sc *SecurityChecker) checkLineForVulnerabilities(filename, line string, li
 		regexp.MustCompile(`(?i)UPDATE.*\+.*SET`),
 		regexp.MustCompile(`(?i)DELETE.*\+.*FROM`),
 	}
-	
+
 	for _, pattern := range sqlInjectionPatterns {
 		if pattern.MatchString(line) {
 			issue := models.Issue{
-				Type:        models.VibeTypeSecurity,
-				Severity:    models.SeverityError,
-				Title:       "Potential SQL Injection vulnerability",
-				Message:     "SQL query appears to use string concatenation which may lead to SQL injection",
-				File:        filename,
-				Line:        lineNumber,
-				Rule:        "sql-injection-risk",
-				Context:     utils.TruncateString(line, 100),
-				Fixable:     true,
+				Type:          models.VibeTypeSecurity,
+				Severity:      models.SeverityError,
+				Title:         "Potential SQL Injection vulnerability",
+				Message:       "SQL query appears to use string concatenation which may lead to SQL injection",
+				File:          filename,
+				Line:          lineNumber,
+				Rule:          "sql-injection-risk",
+				Context:       utils.TruncateString(line, 100),
+				Fixable:       true,
 				FixSuggestion: "Use parameterized queries or prepared statements",
-				Confidence:  0.8,
+				Confidence:    0.8,
 			}
 			issues = append(issues, issue)
 		}
 	}
-	
+
 	// XSS patterns
 	xssPatterns := []*regexp.Regexp{
 		regexp.MustCompile(`(?i)innerHTML\s*=\s*.*\+`),
 		regexp.MustCompile(`(?i)outerHTML\s*=\s*.*\+`),
 		regexp.MustCompile(`(?i)document\.write\s*\(`),
 	}
-	
+
 	for _, pattern := range xssPatterns {
 		if pattern.MatchString(line) {
 			issue := models.Issue{
-				Type:        models.VibeTypeSecurity,
-				Severity:    models.SeverityError,
-				Title:       "Potential XSS vulnerability",
-				Message:     "Direct DOM manipulation with user input may lead to XSS attacks",
-				File:        filename,
-				Line:        lineNumber,
-				Rule:        "xss-risk",
-				Context:     utils.TruncateString(line, 100),
-				Fixable:     true,
+				Type:          models.VibeTypeSecurity,
+				Severity:      models.SeverityError,
+				Title:         "Potential XSS vulnerability",
+				Message:       "Direct DOM manipulation with user input may lead to XSS attacks",
+				File:          filename,
+				Line:          lineNumber,
+				Rule:          "xss-risk",
+				Context:       utils.TruncateString(line, 100),
+				Fixable:       true,
 				FixSuggestion: "Use safe DOM manipulation methods or sanitize input",
-				Confidence:  0.7,
+				Confidence:    0.7,
 			}
 			issues = append(issues, issue)
 		}
 	}
-	
+
 	// Command Injection patterns
 	cmdInjectionPatterns := []*regexp.Regexp{
 		regexp.MustCompile(`(?i)exec\s*\(\s*[^)]*\+`),
@@ -273,26 +273,26 @@ func (sc *SecurityChecker) checkLineForVulnerabilities(filename, line string, li
 		regexp.MustCompile(`(?i)Runtime\.exec\s*\(`),
 		regexp.MustCompile(`(?i)ProcessBuilder\s*\(`),
 	}
-	
+
 	for _, pattern := range cmdInjectionPatterns {
 		if pattern.MatchString(line) {
 			issue := models.Issue{
-				Type:        models.VibeTypeSecurity,
-				Severity:    models.SeverityError,
-				Title:       "Potential Command Injection vulnerability",
-				Message:     "Command execution with user input may lead to command injection",
-				File:        filename,
-				Line:        lineNumber,
-				Rule:        "command-injection-risk",
-				Context:     utils.TruncateString(line, 100),
-				Fixable:     true,
+				Type:          models.VibeTypeSecurity,
+				Severity:      models.SeverityError,
+				Title:         "Potential Command Injection vulnerability",
+				Message:       "Command execution with user input may lead to command injection",
+				File:          filename,
+				Line:          lineNumber,
+				Rule:          "command-injection-risk",
+				Context:       utils.TruncateString(line, 100),
+				Fixable:       true,
 				FixSuggestion: "Validate and sanitize input, use safe command execution methods",
-				Confidence:  0.8,
+				Confidence:    0.8,
 			}
 			issues = append(issues, issue)
 		}
 	}
-	
+
 	// Eval usage patterns
 	evalPatterns := []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\beval\s*\(`),
@@ -300,33 +300,33 @@ func (sc *SecurityChecker) checkLineForVulnerabilities(filename, line string, li
 		regexp.MustCompile(`(?i)setTimeout\s*\(\s*['"]\s*[^'"]*\+`),
 		regexp.MustCompile(`(?i)setInterval\s*\(\s*['"]\s*[^'"]*\+`),
 	}
-	
+
 	for _, pattern := range evalPatterns {
 		if pattern.MatchString(line) {
 			issue := models.Issue{
-				Type:        models.VibeTypeSecurity,
-				Severity:    models.SeverityWarning,
-				Title:       "Dangerous eval() usage",
-				Message:     "Using eval() or similar functions can lead to code injection vulnerabilities",
-				File:        filename,
-				Line:        lineNumber,
-				Rule:        "eval-usage",
-				Context:     utils.TruncateString(line, 100),
-				Fixable:     true,
+				Type:          models.VibeTypeSecurity,
+				Severity:      models.SeverityWarning,
+				Title:         "Dangerous eval() usage",
+				Message:       "Using eval() or similar functions can lead to code injection vulnerabilities",
+				File:          filename,
+				Line:          lineNumber,
+				Rule:          "eval-usage",
+				Context:       utils.TruncateString(line, 100),
+				Fixable:       true,
 				FixSuggestion: "Avoid eval(), use safer alternatives like JSON.parse() for data",
-				Confidence:  0.9,
+				Confidence:    0.9,
 			}
 			issues = append(issues, issue)
 		}
 	}
-	
+
 	return issues
 }
 
 // checkLineForHardcodedCredentials checks for hardcoded passwords and credentials
 func (sc *SecurityChecker) checkLineForHardcodedCredentials(filename, line string, lineNumber int) []models.Issue {
 	var issues []models.Issue
-	
+
 	// Hardcoded password patterns
 	passwordPatterns := []*regexp.Regexp{
 		regexp.MustCompile(`(?i)(password|pwd|pass)\s*[=:]\s*['"][^'"]{8,}['"]`),
@@ -334,42 +334,42 @@ func (sc *SecurityChecker) checkLineForHardcodedCredentials(filename, line strin
 		regexp.MustCompile(`(?i)(token)\s*[=:]\s*['"][^'"]{20,}['"]`),
 		regexp.MustCompile(`(?i)(auth|authorization)\s*[=:]\s*['"][^'"]{10,}['"]`),
 	}
-	
+
 	for _, pattern := range passwordPatterns {
 		if pattern.MatchString(line) {
 			// Check if it's obviously a placeholder
 			if sc.isPlaceholder(line) {
 				continue
 			}
-			
+
 			issue := models.Issue{
-				Type:        models.VibeTypeSecurity,
-				Severity:    models.SeverityError,
-				Title:       "Hardcoded credentials detected",
-				Message:     "Hardcoded passwords, keys, or tokens should not be stored in source code",
-				File:        filename,
-				Line:        lineNumber,
-				Rule:        "hardcoded-credentials",
-				Context:     utils.TruncateString(line, 100),
-				Fixable:     true,
+				Type:          models.VibeTypeSecurity,
+				Severity:      models.SeverityError,
+				Title:         "Hardcoded credentials detected",
+				Message:       "Hardcoded passwords, keys, or tokens should not be stored in source code",
+				File:          filename,
+				Line:          lineNumber,
+				Rule:          "hardcoded-credentials",
+				Context:       utils.TruncateString(line, 100),
+				Fixable:       true,
 				FixSuggestion: "Use environment variables or secure configuration management",
-				Confidence:  0.8,
+				Confidence:    0.8,
 			}
 			issues = append(issues, issue)
 		}
 	}
-	
+
 	return issues
 }
 
 // checkLineForHighEntropy checks for high entropy strings that might be secrets
 func (sc *SecurityChecker) checkLineForHighEntropy(filename, line string, lineNumber int) []models.Issue {
 	var issues []models.Issue
-	
+
 	// Find quoted strings
 	stringPattern := regexp.MustCompile(`['"]([A-Za-z0-9+/=]{20,})['"]`)
 	matches := stringPattern.FindAllStringSubmatch(line, -1)
-	
+
 	for _, match := range matches {
 		if len(match) > 1 {
 			entropy := sc.calculateEntropy(match[1])
@@ -378,18 +378,18 @@ func (sc *SecurityChecker) checkLineForHighEntropy(filename, line string, lineNu
 				if sc.isHighEntropyFalsePositive(match[1]) {
 					continue
 				}
-				
+
 				issue := models.Issue{
-					Type:        models.VibeTypeSecurity,
-					Severity:    models.SeverityWarning,
-					Title:       "High entropy string detected",
-					Message:     fmt.Sprintf("String with high entropy (%.2f) may be a secret or key", entropy),
-					File:        filename,
-					Line:        lineNumber,
-					Rule:        "high-entropy-string",
-					Context:     utils.TruncateString(line, 100),
-					Fixable:     false,
-					Confidence:  0.6,
+					Type:       models.VibeTypeSecurity,
+					Severity:   models.SeverityWarning,
+					Title:      "High entropy string detected",
+					Message:    fmt.Sprintf("String with high entropy (%.2f) may be a secret or key", entropy),
+					File:       filename,
+					Line:       lineNumber,
+					Rule:       "high-entropy-string",
+					Context:    utils.TruncateString(line, 100),
+					Fixable:    false,
+					Confidence: 0.6,
 					Metadata: map[string]interface{}{
 						"entropy": entropy,
 						"string":  match[1],
@@ -399,7 +399,7 @@ func (sc *SecurityChecker) checkLineForHighEntropy(filename, line string, lineNu
 			}
 		}
 	}
-	
+
 	return issues
 }
 
@@ -408,24 +408,24 @@ func (sc *SecurityChecker) calculateEntropy(s string) float64 {
 	if len(s) == 0 {
 		return 0
 	}
-	
+
 	// Count character frequencies
 	freq := make(map[rune]int)
 	for _, char := range s {
 		freq[char]++
 	}
-	
+
 	// Calculate entropy
 	var entropy float64
 	length := float64(len(s))
-	
+
 	for _, count := range freq {
 		p := float64(count) / length
 		if p > 0 {
 			entropy -= p * math.Log2(p)
 		}
 	}
-	
+
 	return entropy
 }
 
@@ -436,28 +436,28 @@ func (sc *SecurityChecker) isFalsePositive(filename, line, secretType string) bo
 		"example", "test", "demo", "sample", "placeholder", "dummy",
 		"fake", "mock", "template", "TODO", "FIXME", "XXX",
 	}
-	
+
 	lowerLine := strings.ToLower(line)
 	for _, fp := range falsePositives {
 		if strings.Contains(lowerLine, fp) {
 			return true
 		}
 	}
-	
+
 	// Check if it's in a test file
 	if strings.Contains(strings.ToLower(filename), "test") ||
 		strings.Contains(strings.ToLower(filename), "spec") ||
 		strings.Contains(strings.ToLower(filename), "mock") {
 		return true
 	}
-	
+
 	// Check if it's in documentation
 	if strings.HasSuffix(strings.ToLower(filename), ".md") ||
 		strings.HasSuffix(strings.ToLower(filename), ".txt") ||
 		strings.Contains(strings.ToLower(filename), "readme") {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -469,32 +469,32 @@ func (sc *SecurityChecker) isPlaceholder(line string) bool {
 		"enter_password", "enter_key", "enter_token",
 		"12345", "abcdef", "foobar", "changeme", "replace_me",
 	}
-	
+
 	lowerLine := strings.ToLower(line)
 	for _, placeholder := range placeholders {
 		if strings.Contains(lowerLine, placeholder) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
 // isHighEntropyFalsePositive checks if a high entropy string is a false positive
 func (sc *SecurityChecker) isHighEntropyFalsePositive(s string) bool {
 	// Check for common patterns that are high entropy but not secrets
-	
+
 	// Base64 encoded images or data URLs
 	if strings.HasPrefix(s, "data:") {
 		return true
 	}
-	
+
 	// UUIDs
 	uuidPattern := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	if uuidPattern.MatchString(s) {
 		return true
 	}
-	
+
 	// Checksums or hashes (common patterns)
 	if len(s) == 32 || len(s) == 40 || len(s) == 64 {
 		hexPattern := regexp.MustCompile(`^[0-9a-fA-F]+$`)
@@ -502,7 +502,7 @@ func (sc *SecurityChecker) isHighEntropyFalsePositive(s string) bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
 

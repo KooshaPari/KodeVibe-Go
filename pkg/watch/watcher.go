@@ -13,8 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"kodevibe/internal/models"
-	"kodevibe/pkg/scanner"
 	"kodevibe/pkg/fix"
+	"kodevibe/pkg/scanner"
 )
 
 // Watcher provides file watching and live scanning capabilities
@@ -330,7 +330,7 @@ func (w *Watcher) GetStatus() map[string]interface{} {
 	defer w.mu.RUnlock()
 
 	return map[string]interface{}{
-		"watching":   w.isWatching,
+		"watching":  w.isWatching,
 		"last_scan": w.lastScan,
 	}
 }

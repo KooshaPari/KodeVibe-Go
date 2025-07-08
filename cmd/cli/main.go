@@ -9,25 +9,25 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/sirupsen/logrus"
 
 	"kodevibe/internal/models"
 	"kodevibe/pkg/config"
-	"kodevibe/pkg/scanner"
-	"kodevibe/pkg/report"
 	"kodevibe/pkg/fix"
-	"kodevibe/pkg/watch"
+	"kodevibe/pkg/report"
+	"kodevibe/pkg/scanner"
 	"kodevibe/pkg/server"
+	"kodevibe/pkg/watch"
 )
 
 var (
-	cfgFile     string
-	verbose     bool
-	quiet       bool
-	configMgr   *config.Manager
-	logger      *logrus.Logger
+	cfgFile   string
+	verbose   bool
+	quiet     bool
+	configMgr *config.Manager
+	logger    *logrus.Logger
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -83,13 +83,13 @@ func init() {
 
 func initConfig() {
 	configMgr = config.NewManager()
-	
+
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
-		
+
 		viper.AddConfigPath(".")
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".kodevibe")
@@ -149,7 +149,7 @@ func init() {
 
 func runScan(cmd *cobra.Command, args []string) error {
 	startTime := time.Now()
-	
+
 	// Get scan paths
 	paths := args
 	if len(paths) == 0 {
@@ -186,7 +186,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 	if !enableCache {
 		cfg.Advanced.CacheEnabled = false
 	}
-	
+
 	// Add exclude patterns
 	cfg.Exclude.Files = append(cfg.Exclude.Files, excludeFlag...)
 
@@ -200,16 +200,16 @@ func runScan(cmd *cobra.Command, args []string) error {
 	for i, vibe := range vibes {
 		vibeStrings[i] = string(vibe)
 	}
-	
+
 	// Create scan request
 	request := &models.ScanRequest{
-		Paths:        paths,
-		Vibes:        vibeStrings,
-		Config:       cfg,
-		StagedOnly:   stagedOnly,
-		DiffTarget:   diffTarget,
-		Format:       models.ReportFormat(outputFormat),
-		CreatedAt:    time.Now(),
+		Paths:      paths,
+		Vibes:      vibeStrings,
+		Config:     cfg,
+		StagedOnly: stagedOnly,
+		DiffTarget: diffTarget,
+		Format:     models.ReportFormat(outputFormat),
+		CreatedAt:  time.Now(),
 	}
 
 	// Create context with timeout
@@ -556,7 +556,7 @@ func showScanSummary(result *models.ScanResult, duration time.Duration) {
 	fmt.Printf("⏱️  Duration: %v\n", duration)
 	fmt.Printf("📄 Files scanned: %d\n", result.FilesScanned)
 	fmt.Printf("⚠️  Total issues: %d\n", result.Summary.TotalIssues)
-	
+
 	if result.Summary.ErrorIssues > 0 {
 		red := color.New(color.FgRed).SprintFunc()
 		fmt.Printf("❌ Errors: %s\n", red(result.Summary.ErrorIssues))
@@ -569,7 +569,7 @@ func showScanSummary(result *models.ScanResult, duration time.Duration) {
 		blue := color.New(color.FgBlue).SprintFunc()
 		fmt.Printf("ℹ️  Info: %s\n", blue(result.Summary.InfoIssues))
 	}
-	
+
 	fmt.Printf("📈 Score: %.1f (%s)\n", result.Summary.Score, result.Summary.Grade)
 	fmt.Println(strings.Repeat("=", 50))
 }
@@ -580,16 +580,16 @@ func filterIssuesBySeverity(issues []models.Issue, minSeverity string) []models.
 		"warning": 1,
 		"error":   2,
 	}
-	
+
 	minLevel := severityMap[minSeverity]
 	var filtered []models.Issue
-	
+
 	for _, issue := range issues {
 		if severityMap[string(issue.Severity)] >= minLevel {
 			filtered = append(filtered, issue)
 		}
 	}
-	
+
 	return filtered
 }
 
@@ -599,11 +599,11 @@ func generateSummary(issues []models.Issue) models.ScanSummary {
 		IssuesByType:     make(map[models.VibeType]int),
 		IssuesBySeverity: make(map[models.SeverityLevel]int),
 	}
-	
+
 	for _, issue := range issues {
 		summary.IssuesByType[issue.Type]++
 		summary.IssuesBySeverity[issue.Severity]++
-		
+
 		switch issue.Severity {
 		case models.SeverityError:
 			summary.ErrorIssues++
@@ -613,13 +613,13 @@ func generateSummary(issues []models.Issue) models.ScanSummary {
 			summary.InfoIssues++
 		}
 	}
-	
+
 	// Calculate score (100 - penalties)
 	summary.Score = 100.0 - float64(summary.ErrorIssues*10) - float64(summary.WarningIssues*5) - float64(summary.InfoIssues*1)
 	if summary.Score < 0 {
 		summary.Score = 0
 	}
-	
+
 	// Determine grade
 	switch {
 	case summary.Score >= 90:
@@ -633,7 +633,7 @@ func generateSummary(issues []models.Issue) models.ScanSummary {
 	default:
 		summary.Grade = "F"
 	}
-	
+
 	return summary
 }
 
@@ -683,34 +683,34 @@ exit $?
 
 func uninstallGitHooks() error {
 	hooksToRemove := []string{".git/hooks/pre-commit", ".git/hooks/pre-push"}
-	
+
 	for _, hook := range hooksToRemove {
 		if err := os.Remove(hook); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to remove %s: %w", hook, err)
 		}
 	}
-	
+
 	fmt.Println("✅ Git hooks uninstalled")
 	return nil
 }
 
 func testGitHooks() error {
 	fmt.Println("🧪 Testing git hooks...")
-	
+
 	// Test pre-commit hook
 	if _, err := os.Stat(".git/hooks/pre-commit"); err == nil {
 		fmt.Println("✅ Pre-commit hook found")
 	} else {
 		fmt.Println("❌ Pre-commit hook not found")
 	}
-	
+
 	// Test pre-push hook
 	if _, err := os.Stat(".git/hooks/pre-push"); err == nil {
 		fmt.Println("✅ Pre-push hook found")
 	} else {
 		fmt.Println("❌ Pre-push hook not found")
 	}
-	
+
 	return nil
 }
 
@@ -719,7 +719,7 @@ func showConfig() error {
 	fmt.Println("📋 Current Configuration:")
 	fmt.Printf("Project Type: %s\n", cfg.Project.Type)
 	fmt.Printf("Language: %s\n", cfg.Project.Language)
-	
+
 	fmt.Println("\n🎯 Enabled Vibes:")
 	for vibeType, vibeConfig := range cfg.Vibes {
 		status := "❌"
@@ -728,7 +728,7 @@ func showConfig() error {
 		}
 		fmt.Printf("  %s %s (%s)\n", status, vibeType, vibeConfig.Level)
 	}
-	
+
 	return nil
 }
 
@@ -736,7 +736,7 @@ func validateConfig() error {
 	if err := config.ValidateConfigFile(cfgFile); err != nil {
 		return fmt.Errorf("configuration validation failed: %w", err)
 	}
-	
+
 	fmt.Println("✅ Configuration is valid")
 	return nil
 }

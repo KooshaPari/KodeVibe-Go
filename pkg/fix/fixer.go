@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"kodevibe/internal/models"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Fixer handles automatic fixing of detected issues

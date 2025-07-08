@@ -8,9 +8,9 @@ import (
 type SeverityLevel string
 
 const (
-	SeverityError   SeverityLevel = "error"
-	SeverityWarning SeverityLevel = "warning"
-	SeverityInfo    SeverityLevel = "info"
+	SeverityError    SeverityLevel = "error"
+	SeverityWarning  SeverityLevel = "warning"
+	SeverityInfo     SeverityLevel = "info"
 	SeverityCritical SeverityLevel = "critical"
 )
 
@@ -29,65 +29,64 @@ const (
 
 // Issue represents a detected issue in the code
 type Issue struct {
-	ID          string        `json:"id" yaml:"id"`
-	Type        VibeType      `json:"type" yaml:"type"`
-	Severity    SeverityLevel `json:"severity" yaml:"severity"`
-	Title       string        `json:"title" yaml:"title"`
-	Message     string        `json:"message" yaml:"message"`
-	File        string        `json:"file" yaml:"file"`
-	Line        int           `json:"line" yaml:"line"`
-	Column      int           `json:"column" yaml:"column"`
-	Rule        string        `json:"rule" yaml:"rule"`
-	Pattern     string        `json:"pattern,omitempty" yaml:"pattern,omitempty"`
-	Context     string        `json:"context,omitempty" yaml:"context,omitempty"`
-	Fixable     bool          `json:"fixable" yaml:"fixable"`
-	FixSuggestion string      `json:"fix_suggestion,omitempty" yaml:"fix_suggestion,omitempty"`
-	Confidence  float64       `json:"confidence" yaml:"confidence"`
-	CreatedAt   time.Time     `json:"created_at" yaml:"created_at"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	ID            string                 `json:"id" yaml:"id"`
+	Type          VibeType               `json:"type" yaml:"type"`
+	Severity      SeverityLevel          `json:"severity" yaml:"severity"`
+	Title         string                 `json:"title" yaml:"title"`
+	Message       string                 `json:"message" yaml:"message"`
+	File          string                 `json:"file" yaml:"file"`
+	Line          int                    `json:"line" yaml:"line"`
+	Column        int                    `json:"column" yaml:"column"`
+	Rule          string                 `json:"rule" yaml:"rule"`
+	Pattern       string                 `json:"pattern,omitempty" yaml:"pattern,omitempty"`
+	Context       string                 `json:"context,omitempty" yaml:"context,omitempty"`
+	Fixable       bool                   `json:"fixable" yaml:"fixable"`
+	FixSuggestion string                 `json:"fix_suggestion,omitempty" yaml:"fix_suggestion,omitempty"`
+	Confidence    float64                `json:"confidence" yaml:"confidence"`
+	CreatedAt     time.Time              `json:"created_at" yaml:"created_at"`
+	Metadata      map[string]interface{} `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 }
 
 // ScanResult represents the result of a complete scan
 type ScanResult struct {
-	ScanID           string              `json:"scan_id" yaml:"scan_id"`
-	ID               string              `json:"id" yaml:"id"`
-	StartTime        time.Time           `json:"start_time" yaml:"start_time"`
-	EndTime          time.Time           `json:"end_time" yaml:"end_time"`
-	Duration         time.Duration       `json:"duration" yaml:"duration"`
-	Timestamp        time.Time           `json:"timestamp" yaml:"timestamp"`
-	ProjectPath      string              `json:"project_path" yaml:"project_path"`
-	FilesScanned     int                 `json:"files_scanned" yaml:"files_scanned"`
-	FilesSkipped     int                 `json:"files_skipped" yaml:"files_skipped"`
-	Issues           []Issue             `json:"issues" yaml:"issues"`
-	Summary          ScanSummary         `json:"summary" yaml:"summary"`
-	Configuration    *Configuration      `json:"configuration,omitempty" yaml:"configuration,omitempty"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	ScanID        string                 `json:"scan_id" yaml:"scan_id"`
+	ID            string                 `json:"id" yaml:"id"`
+	StartTime     time.Time              `json:"start_time" yaml:"start_time"`
+	EndTime       time.Time              `json:"end_time" yaml:"end_time"`
+	Duration      time.Duration          `json:"duration" yaml:"duration"`
+	Timestamp     time.Time              `json:"timestamp" yaml:"timestamp"`
+	ProjectPath   string                 `json:"project_path" yaml:"project_path"`
+	FilesScanned  int                    `json:"files_scanned" yaml:"files_scanned"`
+	FilesSkipped  int                    `json:"files_skipped" yaml:"files_skipped"`
+	Issues        []Issue                `json:"issues" yaml:"issues"`
+	Summary       ScanSummary            `json:"summary" yaml:"summary"`
+	Configuration *Configuration         `json:"configuration,omitempty" yaml:"configuration,omitempty"`
+	Metadata      map[string]interface{} `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 }
-
 
 // Configuration represents the KodeVibe configuration
 type Configuration struct {
-	Scanner       ScannerConfig               `json:"scanner" yaml:"scanner"`
-	Server        ServerConfig                `json:"server" yaml:"server"`
-	Vibes         map[VibeType]VibeConfig     `json:"vibes" yaml:"vibes"`
-	Project       ProjectConfig               `json:"project" yaml:"project"`
-	Exclude       ExcludeConfig               `json:"exclude" yaml:"exclude"`
-	CustomRules   []CustomRule                `json:"custom_rules" yaml:"custom_rules"`
-	Integrations  IntegrationConfig           `json:"integrations" yaml:"integrations"`
-	Advanced      AdvancedConfig              `json:"advanced" yaml:"advanced"`
-	Languages     map[string]LanguageConfig   `json:"languages" yaml:"languages"`
-	CICD          CICDConfig                  `json:"ci_cd" yaml:"ci_cd"`
-	Reporting     ReportingConfig             `json:"reporting" yaml:"reporting"`
+	Scanner      ScannerConfig             `json:"scanner" yaml:"scanner"`
+	Server       ServerConfig              `json:"server" yaml:"server"`
+	Vibes        map[VibeType]VibeConfig   `json:"vibes" yaml:"vibes"`
+	Project      ProjectConfig             `json:"project" yaml:"project"`
+	Exclude      ExcludeConfig             `json:"exclude" yaml:"exclude"`
+	CustomRules  []CustomRule              `json:"custom_rules" yaml:"custom_rules"`
+	Integrations IntegrationConfig         `json:"integrations" yaml:"integrations"`
+	Advanced     AdvancedConfig            `json:"advanced" yaml:"advanced"`
+	Languages    map[string]LanguageConfig `json:"languages" yaml:"languages"`
+	CICD         CICDConfig                `json:"ci_cd" yaml:"ci_cd"`
+	Reporting    ReportingConfig           `json:"reporting" yaml:"reporting"`
 }
 
 // VibeConfig represents configuration for a specific vibe
 type VibeConfig struct {
-	Enabled       bool                    `json:"enabled" yaml:"enabled"`
-	Level         string                  `json:"level" yaml:"level"`
-	Rules         []string                `json:"rules,omitempty" yaml:"rules,omitempty"`
-	Checks        []string                `json:"checks,omitempty" yaml:"checks,omitempty"`
-	MaxThreshold  int                     `json:"max_threshold,omitempty" yaml:"max_threshold,omitempty"`
-	Settings      map[string]interface{}  `json:"settings,omitempty" yaml:"settings,omitempty"`
+	Enabled      bool                   `json:"enabled" yaml:"enabled"`
+	Level        string                 `json:"level" yaml:"level"`
+	Rules        []string               `json:"rules,omitempty" yaml:"rules,omitempty"`
+	Checks       []string               `json:"checks,omitempty" yaml:"checks,omitempty"`
+	MaxThreshold int                    `json:"max_threshold,omitempty" yaml:"max_threshold,omitempty"`
+	Settings     map[string]interface{} `json:"settings,omitempty" yaml:"settings,omitempty"`
 }
 
 // ProjectConfig represents project-specific configuration
@@ -109,14 +108,14 @@ type ExcludeConfig struct {
 
 // CustomRule represents a custom rule definition
 type CustomRule struct {
-	Name        string        `json:"name" yaml:"name"`
-	Pattern     string        `json:"pattern" yaml:"pattern"`
-	Message     string        `json:"message" yaml:"message"`
-	Severity    SeverityLevel `json:"severity" yaml:"severity"`
-	Type        VibeType      `json:"type" yaml:"type"`
-	Enabled     bool          `json:"enabled" yaml:"enabled"`
-	FileTypes   []string      `json:"file_types,omitempty" yaml:"file_types,omitempty"`
-	Confidence  float64       `json:"confidence" yaml:"confidence"`
+	Name       string        `json:"name" yaml:"name"`
+	Pattern    string        `json:"pattern" yaml:"pattern"`
+	Message    string        `json:"message" yaml:"message"`
+	Severity   SeverityLevel `json:"severity" yaml:"severity"`
+	Type       VibeType      `json:"type" yaml:"type"`
+	Enabled    bool          `json:"enabled" yaml:"enabled"`
+	FileTypes  []string      `json:"file_types,omitempty" yaml:"file_types,omitempty"`
+	Confidence float64       `json:"confidence" yaml:"confidence"`
 }
 
 // IntegrationConfig represents integration settings
@@ -170,25 +169,25 @@ type WebhookConfig struct {
 
 // AdvancedConfig represents advanced configuration options
 type AdvancedConfig struct {
-	EntropyAnalysis    bool                   `json:"entropy_analysis" yaml:"entropy_analysis"`
-	EntropyThreshold   float64                `json:"entropy_threshold" yaml:"entropy_threshold"`
-	AIDetection        bool                   `json:"ai_detection" yaml:"ai_detection"`
-	AIProvider         string                 `json:"ai_provider" yaml:"ai_provider"`
-	AIModel            string                 `json:"ai_model" yaml:"ai_model"`
-	ExternalScanners   []ExternalScanner      `json:"external_scanners" yaml:"external_scanners"`
-	PerformanceProfiling bool                 `json:"performance_profiling" yaml:"performance_profiling"`
-	CacheEnabled       bool                   `json:"cache_enabled" yaml:"cache_enabled"`
-	CacheTTL           time.Duration          `json:"cache_ttl" yaml:"cache_ttl"`
-	MaxConcurrency     int                    `json:"max_concurrency" yaml:"max_concurrency"`
-	Timeout            time.Duration          `json:"timeout" yaml:"timeout"`
-	CustomAnalyzers    []CustomAnalyzer       `json:"custom_analyzers" yaml:"custom_analyzers"`
+	EntropyAnalysis      bool              `json:"entropy_analysis" yaml:"entropy_analysis"`
+	EntropyThreshold     float64           `json:"entropy_threshold" yaml:"entropy_threshold"`
+	AIDetection          bool              `json:"ai_detection" yaml:"ai_detection"`
+	AIProvider           string            `json:"ai_provider" yaml:"ai_provider"`
+	AIModel              string            `json:"ai_model" yaml:"ai_model"`
+	ExternalScanners     []ExternalScanner `json:"external_scanners" yaml:"external_scanners"`
+	PerformanceProfiling bool              `json:"performance_profiling" yaml:"performance_profiling"`
+	CacheEnabled         bool              `json:"cache_enabled" yaml:"cache_enabled"`
+	CacheTTL             time.Duration     `json:"cache_ttl" yaml:"cache_ttl"`
+	MaxConcurrency       int               `json:"max_concurrency" yaml:"max_concurrency"`
+	Timeout              time.Duration     `json:"timeout" yaml:"timeout"`
+	CustomAnalyzers      []CustomAnalyzer  `json:"custom_analyzers" yaml:"custom_analyzers"`
 }
 
 // ExternalScanner represents external scanner configuration
 type ExternalScanner struct {
-	Name    string `json:"name" yaml:"name"`
-	Enabled bool   `json:"enabled" yaml:"enabled"`
-	Command string `json:"command" yaml:"command"`
+	Name    string   `json:"name" yaml:"name"`
+	Enabled bool     `json:"enabled" yaml:"enabled"`
+	Command string   `json:"command" yaml:"command"`
 	Args    []string `json:"args,omitempty" yaml:"args,omitempty"`
 }
 
@@ -219,8 +218,8 @@ type CICDConfig struct {
 
 // GitHubActionsConfig represents GitHub Actions configuration
 type GitHubActionsConfig struct {
-	Enabled bool             `json:"enabled" yaml:"enabled"`
-	FailOn  []SeverityLevel  `json:"fail_on" yaml:"fail_on"`
+	Enabled bool            `json:"enabled" yaml:"enabled"`
+	FailOn  []SeverityLevel `json:"fail_on" yaml:"fail_on"`
 }
 
 // GitLabCIConfig represents GitLab CI configuration
@@ -235,10 +234,10 @@ type JenkinsConfig struct {
 
 // QualityGatesConfig represents quality gates configuration
 type QualityGatesConfig struct {
-	MinCodeCoverage       int `json:"min_code_coverage" yaml:"min_code_coverage"`
-	MaxComplexityScore    int `json:"max_complexity_score" yaml:"max_complexity_score"`
-	MaxSecurityIssues     int `json:"max_security_issues" yaml:"max_security_issues"`
-	MaxPerformanceIssues  int `json:"max_performance_issues" yaml:"max_performance_issues"`
+	MinCodeCoverage      int `json:"min_code_coverage" yaml:"min_code_coverage"`
+	MaxComplexityScore   int `json:"max_complexity_score" yaml:"max_complexity_score"`
+	MaxSecurityIssues    int `json:"max_security_issues" yaml:"max_security_issues"`
+	MaxPerformanceIssues int `json:"max_performance_issues" yaml:"max_performance_issues"`
 }
 
 // ReportingConfig represents reporting configuration
@@ -260,25 +259,25 @@ type LoggingConfig struct {
 
 // ScanRequest represents a request to scan files
 type ScanRequest struct {
-	ID           string          `json:"id" yaml:"id"`
-	Paths        []string        `json:"paths" yaml:"paths"`
-	Vibes        []string        `json:"vibes" yaml:"vibes"`
-	Config       *Configuration  `json:"config,omitempty" yaml:"config,omitempty"`
-	StagedOnly   bool            `json:"staged_only" yaml:"staged_only"`
-	DiffTarget   string          `json:"diff_target,omitempty" yaml:"diff_target,omitempty"`
-	Format       ReportFormat    `json:"format" yaml:"format"`
-	CreatedAt    time.Time       `json:"created_at" yaml:"created_at"`
+	ID         string         `json:"id" yaml:"id"`
+	Paths      []string       `json:"paths" yaml:"paths"`
+	Vibes      []string       `json:"vibes" yaml:"vibes"`
+	Config     *Configuration `json:"config,omitempty" yaml:"config,omitempty"`
+	StagedOnly bool           `json:"staged_only" yaml:"staged_only"`
+	DiffTarget string         `json:"diff_target,omitempty" yaml:"diff_target,omitempty"`
+	Format     ReportFormat   `json:"format" yaml:"format"`
+	CreatedAt  time.Time      `json:"created_at" yaml:"created_at"`
 }
 
 // FixResult represents the result of an auto-fix operation
 type FixResult struct {
-	IssueID       string    `json:"issue_id" yaml:"issue_id"`
-	Fixed         bool      `json:"fixed" yaml:"fixed"`
-	OriginalCode  string    `json:"original_code" yaml:"original_code"`
-	FixedCode     string    `json:"fixed_code" yaml:"fixed_code"`
-	Error         string    `json:"error,omitempty" yaml:"error,omitempty"`
-	Confidence    float64   `json:"confidence" yaml:"confidence"`
-	AppliedAt     time.Time `json:"applied_at" yaml:"applied_at"`
+	IssueID      string    `json:"issue_id" yaml:"issue_id"`
+	Fixed        bool      `json:"fixed" yaml:"fixed"`
+	OriginalCode string    `json:"original_code" yaml:"original_code"`
+	FixedCode    string    `json:"fixed_code" yaml:"fixed_code"`
+	Error        string    `json:"error,omitempty" yaml:"error,omitempty"`
+	Confidence   float64   `json:"confidence" yaml:"confidence"`
+	AppliedAt    time.Time `json:"applied_at" yaml:"applied_at"`
 }
 
 // WatchEvent represents a file system event
@@ -290,31 +289,31 @@ type WatchEvent struct {
 
 // ProfileResult represents performance profiling results
 type ProfileResult struct {
-	Tool        string                 `json:"tool" yaml:"tool"`
-	Metrics     map[string]interface{} `json:"metrics" yaml:"metrics"`
-	Score       float64                `json:"score" yaml:"score"`
-	Recommendations []string           `json:"recommendations" yaml:"recommendations"`
-	Timestamp   time.Time              `json:"timestamp" yaml:"timestamp"`
+	Tool            string                 `json:"tool" yaml:"tool"`
+	Metrics         map[string]interface{} `json:"metrics" yaml:"metrics"`
+	Score           float64                `json:"score" yaml:"score"`
+	Recommendations []string               `json:"recommendations" yaml:"recommendations"`
+	Timestamp       time.Time              `json:"timestamp" yaml:"timestamp"`
 }
 
 // ServerConfig represents server configuration
 type ServerConfig struct {
-	Host            string        `json:"host" yaml:"host"`
-	Port            int           `json:"port" yaml:"port"`
-	TLS             bool          `json:"tls" yaml:"tls"`
-	CertFile        string        `json:"cert_file,omitempty" yaml:"cert_file,omitempty"`
-	KeyFile         string        `json:"key_file,omitempty" yaml:"key_file,omitempty"`
-	Auth            AuthConfig    `json:"auth" yaml:"auth"`
-	RateLimit       RateLimitConfig `json:"rate_limit" yaml:"rate_limit"`
-	CORS            CORSConfig    `json:"cors" yaml:"cors"`
-	Monitoring      MonitoringConfig `json:"monitoring" yaml:"monitoring"`
+	Host       string           `json:"host" yaml:"host"`
+	Port       int              `json:"port" yaml:"port"`
+	TLS        bool             `json:"tls" yaml:"tls"`
+	CertFile   string           `json:"cert_file,omitempty" yaml:"cert_file,omitempty"`
+	KeyFile    string           `json:"key_file,omitempty" yaml:"key_file,omitempty"`
+	Auth       AuthConfig       `json:"auth" yaml:"auth"`
+	RateLimit  RateLimitConfig  `json:"rate_limit" yaml:"rate_limit"`
+	CORS       CORSConfig       `json:"cors" yaml:"cors"`
+	Monitoring MonitoringConfig `json:"monitoring" yaml:"monitoring"`
 }
 
 // AuthConfig represents authentication configuration
 type AuthConfig struct {
-	Enabled  bool   `json:"enabled" yaml:"enabled"`
-	Type     string `json:"type" yaml:"type"`
-	Secret   string `json:"secret" yaml:"secret"`
+	Enabled  bool          `json:"enabled" yaml:"enabled"`
+	Type     string        `json:"type" yaml:"type"`
+	Secret   string        `json:"secret" yaml:"secret"`
 	TokenTTL time.Duration `json:"token_ttl" yaml:"token_ttl"`
 }
 
@@ -335,10 +334,10 @@ type CORSConfig struct {
 
 // MonitoringConfig represents monitoring configuration
 type MonitoringConfig struct {
-	Enabled    bool   `json:"enabled" yaml:"enabled"`
-	Prometheus bool   `json:"prometheus" yaml:"prometheus"`
-	Grafana    bool   `json:"grafana" yaml:"grafana"`
-	HealthCheck bool  `json:"health_check" yaml:"health_check"`
+	Enabled     bool   `json:"enabled" yaml:"enabled"`
+	Prometheus  bool   `json:"prometheus" yaml:"prometheus"`
+	Grafana     bool   `json:"grafana" yaml:"grafana"`
+	HealthCheck bool   `json:"health_check" yaml:"health_check"`
 	MetricsPath string `json:"metrics_path" yaml:"metrics_path"`
 }
 
@@ -397,13 +396,13 @@ func (sr *ScanRequest) IsValid() bool {
 // ScanResult helper methods
 func (sr *ScanResult) CalculateSummary() ScanSummary {
 	summary := ScanSummary{
-		TotalIssues:   len(sr.Issues),
-		IssuesByType:  make(map[VibeType]int),
-		FilesScanned:  0,
+		TotalIssues:  len(sr.Issues),
+		IssuesByType: make(map[VibeType]int),
+		FilesScanned: 0,
 	}
 
 	filesMap := make(map[string]bool)
-	
+
 	for _, issue := range sr.Issues {
 		// Count by severity
 		switch issue.Severity {
@@ -467,12 +466,12 @@ func (c *Configuration) IsValid() bool {
 	if c.Scanner.Timeout < 0 {
 		return false
 	}
-	
+
 	// Basic server validation
 	if c.Server.Port <= 0 || c.Server.Port > 65535 {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -483,15 +482,15 @@ func (vc *VibeConfig) IsEnabled() bool {
 
 // ScanSummary structure updates
 type ScanSummary struct {
-	TotalIssues       int                      `json:"total_issues" yaml:"total_issues"`
-	CriticalIssues    int                      `json:"critical_issues" yaml:"critical_issues"`
-	ErrorIssues       int                      `json:"error_issues" yaml:"error_issues"`
-	WarningIssues     int                      `json:"warning_issues" yaml:"warning_issues"`
-	InfoIssues        int                      `json:"info_issues" yaml:"info_issues"`
-	FilesScanned      int                      `json:"files_scanned" yaml:"files_scanned"`
-	IssuesByType      map[VibeType]int         `json:"issues_by_type" yaml:"issues_by_type"`
-	IssuesBySeverity  map[SeverityLevel]int    `json:"issues_by_severity" yaml:"issues_by_severity"`
-	TopIssues         []string                 `json:"top_issues" yaml:"top_issues"`
-	Score             float64                  `json:"score" yaml:"score"`
-	Grade             string                   `json:"grade" yaml:"grade"`
+	TotalIssues      int                   `json:"total_issues" yaml:"total_issues"`
+	CriticalIssues   int                   `json:"critical_issues" yaml:"critical_issues"`
+	ErrorIssues      int                   `json:"error_issues" yaml:"error_issues"`
+	WarningIssues    int                   `json:"warning_issues" yaml:"warning_issues"`
+	InfoIssues       int                   `json:"info_issues" yaml:"info_issues"`
+	FilesScanned     int                   `json:"files_scanned" yaml:"files_scanned"`
+	IssuesByType     map[VibeType]int      `json:"issues_by_type" yaml:"issues_by_type"`
+	IssuesBySeverity map[SeverityLevel]int `json:"issues_by_severity" yaml:"issues_by_severity"`
+	TopIssues        []string              `json:"top_issues" yaml:"top_issues"`
+	Score            float64               `json:"score" yaml:"score"`
+	Grade            string                `json:"grade" yaml:"grade"`
 }

@@ -421,7 +421,7 @@ func TestServer_setupRoutes(t *testing.T) {
 		{"GET", "/api/v1/vibes", 200},
 		{"GET", "/api/v1/scans", 200},
 		{"GET", "/api/v1/config", 200},
-		{"GET", "/api/v1/scan/test", 501}, // Not implemented
+		{"GET", "/api/v1/scan/test", 501},        // Not implemented
 		{"POST", "/api/v1/config/validate", 400}, // Bad request without body
 	}
 
@@ -454,7 +454,7 @@ func TestServer_broadcastScanResult(t *testing.T) {
 		Timestamp: time.Now(),
 		Issues:    []models.Issue{},
 		Summary: models.ScanSummary{
-			TotalIssues: 0,
+			TotalIssues:  0,
 			FilesScanned: 1,
 		},
 	}
