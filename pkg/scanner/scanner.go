@@ -590,7 +590,7 @@ func (s *Scanner) shouldIgnore(path string) bool {
 		if matched, _ := filepath.Match(pattern, filepath.Base(path)); matched {
 			return true
 		}
-		
+
 		// Handle directory patterns like "node_modules/*", ".git/*"
 		if strings.HasSuffix(pattern, "/*") {
 			dirPattern := strings.TrimSuffix(pattern, "/*")
@@ -598,7 +598,7 @@ func (s *Scanner) shouldIgnore(path string) bool {
 				return true
 			}
 		}
-		
+
 		// Check full path pattern
 		if matched, _ := filepath.Match(pattern, path); matched {
 			return true
