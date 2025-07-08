@@ -55,7 +55,7 @@ jobs:
         name: codecov-umbrella
 
     - name: Archive test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
         path: |
@@ -118,7 +118,7 @@ jobs:
         go build -o build/${BINARY_NAME}-${GOOS}-${GOARCH} ./cmd/server
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
         path: build/
