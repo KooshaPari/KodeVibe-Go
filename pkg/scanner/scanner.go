@@ -87,6 +87,7 @@ func (s *Scanner) Scan(ctx context.Context, request *models.ScanRequest) (*model
 
 	// Initialize scan result
 	result := &models.ScanResult{
+		ScanID:        scanID,
 		ID:            scanID,
 		StartTime:     startTime,
 		ProjectPath:   strings.Join(request.Paths, ","),
@@ -155,7 +156,11 @@ func (s *Scanner) discoverFiles(paths []string, stagedOnly bool, diffTarget stri
 	for _, path := range paths {
 		files, err := s.discoverFilesInPath(path, stagedOnly, diffTarget)
 		if err != nil {
-			return nil, fmt.Errorf("failed to discover files in path %s: %w", path, err)
+			s.logger.WithFields(logrus.Fields{
+				"path":  path,
+				"error": err.Error(),
+			}).Warn("Failed to discover files in path, skipping")
+			continue
 		}
 		allFiles = append(allFiles, files...)
 	}
@@ -195,6 +200,11 @@ func (s *Scanner) discoverFilesInPath(path string, stagedOnly bool, diffTarget s
 
 		// Skip hidden files and directories
 		if strings.HasPrefix(info.Name(), ".") {
+			return nil
+		}
+
+		// Check if file should be ignored based on patterns
+		if s.shouldIgnore(filePath) {
 			return nil
 		}
 
@@ -310,7 +320,7 @@ func (s *Scanner) runVibeChecks(ctx context.Context, files []string, vibesToRun 
 	var mu sync.Mutex
 
 	// Create semaphore for concurrency control
-	sem := semaphore.NewWeighted(int64(s.config.Advanced.MaxConcurrency))
+	sem := semaphore.NewWeighted(int64(s.maxConcurrency))
 
 	// Create error group for concurrent execution
 	var wg sync.WaitGroup
@@ -576,10 +586,20 @@ func (s *Scanner) ValidateConfiguration() error {
 // shouldIgnore checks if a file should be ignored based on patterns
 func (s *Scanner) shouldIgnore(path string) bool {
 	for _, pattern := range s.config.Scanner.ExcludePatterns {
+		// Check filename pattern (e.g., "*.txt")
 		if matched, _ := filepath.Match(pattern, filepath.Base(path)); matched {
 			return true
 		}
-		// Also check against the full path for patterns like "node_modules/*"
+		
+		// Handle directory patterns like "node_modules/*", ".git/*"
+		if strings.HasSuffix(pattern, "/*") {
+			dirPattern := strings.TrimSuffix(pattern, "/*")
+			if strings.Contains(path, dirPattern+"/") || strings.HasPrefix(path, dirPattern+"/") {
+				return true
+			}
+		}
+		
+		// Check full path pattern
 		if matched, _ := filepath.Match(pattern, path); matched {
 			return true
 		}
