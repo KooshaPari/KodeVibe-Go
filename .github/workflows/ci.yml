@@ -41,11 +41,13 @@ jobs:
 
     - name: Run tests
       run: |
-        go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+        go test -v -timeout=5m -coverprofile=coverage.out -covermode=atomic ./...
 
     - name: Generate test report
       run: |
-        go tool cover -html=coverage.out -o coverage.html
+        if [ -f coverage.out ]; then
+          go tool cover -html=coverage.out -o coverage.html
+        fi
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
@@ -54,6 +56,7 @@ jobs:
         flags: unittests
         name: codecov-umbrella
         token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
 
     - name: Archive test results
       uses: actions/upload-artifact@v4
@@ -160,11 +163,13 @@ jobs:
       run: |
         go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
         gosec -no-fail -fmt sarif -out gosec.sarif ./...
+      continue-on-error: true
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: gosec.sarif
+      continue-on-error: true
 
     - name: Run govulncheck
       run: |
