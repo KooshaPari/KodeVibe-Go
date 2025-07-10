@@ -4,6 +4,8 @@
 
 ## ✅ Production Status
 
+![KodeVibe Overview](docs/screenshots/kodevibe-overview.png)
+
 **KodeVibe is production-ready!** All core components have been thoroughly tested and verified:
 
 - ✅ **Core Engine**: All compilation errors resolved, binaries build successfully
@@ -61,6 +63,8 @@ make install-local  # Installs to ~/.local/bin/
 
 ## 🎯 Quick Start
 
+![KodeVibe Demo](docs/screenshots/kodevibe-demo.gif)
+
 ### Basic Scanning
 ```bash
 # Scan current directory
@@ -89,6 +93,8 @@ kodevibe hooks test
 ```
 
 ### File Watching
+![File Watching Demo](docs/screenshots/kodevibe-file-watching.gif)
+
 ```bash
 # Watch for changes and scan automatically
 kodevibe watch src/ --auto-fix --vibes security,code
@@ -109,7 +115,9 @@ kodevibe fix --rules no-console-log,strict-equality
 kodevibe fix src/
 ```
 
-### HTTP Server
+### HTTP Server & Real-time Dashboard
+![Dashboard Demo](docs/screenshots/kodevibe-dashboard-demo.gif)
+
 ```bash
 # Start server
 kodevibe server --port 8080
@@ -120,6 +128,30 @@ kodevibe server --tls --cert cert.pem --key key.pem
 # Start server in background
 nohup kodevibe server &
 ```
+
+### Interactive Terminal Interface
+![Terminal Demo](docs/screenshots/kodevibe-terminal-demo.gif)
+
+KodeVibe provides a rich interactive CLI experience with colorized output, progress indicators, and real-time feedback.
+
+## 🎬 Live Demonstrations
+
+### 🔄 Real-time Code Analysis
+See KodeVibe in action with live file watching, instant issue detection, and automatic fixes:
+
+| Feature | Demo |
+|---------|------|
+| **Main Interface** | ![KodeVibe Demo](docs/screenshots/kodevibe-demo.gif) |
+| **File Watching** | ![File Watching](docs/screenshots/kodevibe-file-watching.gif) |
+| **Terminal Interface** | ![Terminal Demo](docs/screenshots/kodevibe-terminal-demo.gif) |
+| **Dashboard** | ![Dashboard Demo](docs/screenshots/kodevibe-dashboard-demo.gif) |
+
+### ✨ Key Features Demonstrated
+- 🔍 **Instant Analysis**: Real-time code quality scanning
+- 🛠️ **Auto-Fix**: Intelligent issue resolution
+- 📊 **Live Dashboard**: WebSocket-powered monitoring
+- 🎨 **Interactive UI**: Professional CLI experience
+- ⚡ **File Watching**: Continuous monitoring with live updates
 
 ## ⚙️ Configuration
 
