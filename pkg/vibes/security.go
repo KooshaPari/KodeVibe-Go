@@ -42,6 +42,7 @@ func NewSecurityChecker() *SecurityChecker {
 	checker := &SecurityChecker{
 		entropyThreshold: 4.5,
 		vulnerabilityDB:  NewVulnerabilityDB(),
+		testContent:      make(map[string]string),
 	}
 
 	checker.initializeSecretPatterns()

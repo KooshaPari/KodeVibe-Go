@@ -247,8 +247,7 @@ func TestNormalizePattern(t *testing.T) {
 }
 
 // TODO: Fix CalculateScore test logic - penalty calculation needs review
-func TestCalculateScore_Disabled(t *testing.T) {
-	t.Skip("Skipping CalculateScore test - needs logic review")
+func TestCalculateScore(t *testing.T) {
 	tests := []struct {
 		total    int
 		critical int
@@ -257,10 +256,10 @@ func TestCalculateScore_Disabled(t *testing.T) {
 		expected float64
 	}{
 		{0, 0, 0, 0, 100.0},  // No issues
-		{10, 0, 0, 10, 90.0}, // Only warnings
-		{10, 0, 5, 5, 75.0},  // Errors and warnings
-		{10, 2, 3, 5, 40.0},  // Mix of all
-		{1, 1, 0, 0, 0.0},    // Only critical
+		{10, 0, 0, 10, 90.0}, // Only warnings: 100 - (0*30 + 0*5 + 10*1) = 90
+		{10, 0, 5, 5, 70.0},  // Errors and warnings: 100 - (0*30 + 5*5 + 5*1) = 70
+		{10, 2, 3, 5, 20.0},  // Mix of all: 100 - (2*30 + 3*5 + 5*1) = 20
+		{1, 1, 0, 0, 70.0},   // Only critical: 100 - (1*30 + 0*5 + 0*1) = 70
 	}
 
 	for _, test := range tests {

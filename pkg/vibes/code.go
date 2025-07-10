@@ -686,12 +686,14 @@ func (cc *CodeChecker) isCommentedOutCode(line string) bool {
 
 			// Look for code-like patterns
 			codePatterns := []*regexp.Regexp{
-				regexp.MustCompile(`\w+\s*=\s*\w+`), // assignment
-				regexp.MustCompile(`\w+\(\w*\)`),    // function call
-				regexp.MustCompile(`if\s*\(`),       // if statement
-				regexp.MustCompile(`for\s*\(`),      // for loop
-				regexp.MustCompile(`while\s*\(`),    // while loop
-				regexp.MustCompile(`return\s+`),     // return statement
+				regexp.MustCompile(`\w+\s*=\s*\w+`),         // assignment
+				regexp.MustCompile(`\w+\([^)]*\)`),          // function call with params
+				regexp.MustCompile(`\w+\(.*['"].*['"].*\)`), // function call with quotes
+				regexp.MustCompile(`if\s*\(`),               // if statement
+				regexp.MustCompile(`for\s*\(`),              // for loop
+				regexp.MustCompile(`while\s*\(`),            // while loop
+				regexp.MustCompile(`return\s+`),             // return statement
+				regexp.MustCompile(`print\s*\(`),            // print function
 			}
 
 			for _, pattern := range codePatterns {
@@ -796,7 +798,7 @@ func (cc *CodeChecker) calculateComplexity(lines []string) int {
 }
 
 func (cc *CodeChecker) isCommonNumber(s string) bool {
-	commonNumbers := []string{"2", "3", "4", "5", "10", "100", "1000", "24", "60", "365"}
+	commonNumbers := []string{"2", "3", "4", "5", "10", "100", "1000", "3000", "8080", "24", "60", "365"}
 	for _, common := range commonNumbers {
 		if s == common {
 			return true
