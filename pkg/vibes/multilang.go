@@ -18,12 +18,12 @@ type MultiLanguageChecker struct {
 
 // LanguageConfig contains language-specific analysis rules
 type LanguageConfig struct {
-	Name           string
-	Extensions     []string
-	CommentStyles  []CommentStyle
-	Keywords       []string
-	SecurityRules  []SecurityRule
-	QualityRules   []QualityRule
+	Name            string
+	Extensions      []string
+	CommentStyles   []CommentStyle
+	Keywords        []string
+	SecurityRules   []SecurityRule
+	QualityRules    []QualityRule
 	ComplexityRules []ComplexityRule
 }
 
@@ -66,7 +66,7 @@ func NewMultiLanguageChecker() *MultiLanguageChecker {
 	checker := &MultiLanguageChecker{
 		supportedLanguages: make(map[string]*LanguageConfig),
 	}
-	
+
 	checker.initializeLanguageConfigs()
 	return checker
 }
@@ -84,26 +84,26 @@ func (m *MultiLanguageChecker) CheckFile(filePath string) ([]models.Issue, error
 	}
 
 	var issues []models.Issue
-	
+
 	// Apply security rules
 	securityIssues := m.checkSecurityRules(string(content), filePath, language)
 	issues = append(issues, securityIssues...)
-	
+
 	// Apply quality rules
 	qualityIssues := m.checkQualityRules(string(content), filePath, language)
 	issues = append(issues, qualityIssues...)
-	
+
 	// Check complexity
 	complexityIssues := m.checkComplexity(string(content), filePath, language)
 	issues = append(issues, complexityIssues...)
-	
+
 	return issues, nil
 }
 
 // detectLanguage determines the programming language based on file extension
 func (m *MultiLanguageChecker) detectLanguage(filePath string) *LanguageConfig {
 	ext := strings.ToLower(filepath.Ext(filePath))
-	
+
 	for _, config := range m.supportedLanguages {
 		for _, supportedExt := range config.Extensions {
 			if ext == supportedExt {
@@ -111,7 +111,7 @@ func (m *MultiLanguageChecker) detectLanguage(filePath string) *LanguageConfig {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -119,7 +119,7 @@ func (m *MultiLanguageChecker) detectLanguage(filePath string) *LanguageConfig {
 func (m *MultiLanguageChecker) checkSecurityRules(content, filePath string, lang *LanguageConfig) []models.Issue {
 	var issues []models.Issue
 	lines := strings.Split(content, "\n")
-	
+
 	for _, rule := range lang.SecurityRules {
 		for lineNum, line := range lines {
 			if rule.Pattern.MatchString(line) {
@@ -127,7 +127,7 @@ func (m *MultiLanguageChecker) checkSecurityRules(content, filePath string, lang
 					File:     filePath,
 					Line:     lineNum + 1,
 					Column:   1,
-					Severity: rule.Severity,
+					Severity: models.SeverityLevel(rule.Severity),
 					Message:  rule.Description,
 					Category: rule.Category,
 					Fix:      rule.Fix,
@@ -135,7 +135,7 @@ func (m *MultiLanguageChecker) checkSecurityRules(content, filePath string, lang
 			}
 		}
 	}
-	
+
 	return issues
 }
 
@@ -143,7 +143,7 @@ func (m *MultiLanguageChecker) checkSecurityRules(content, filePath string, lang
 func (m *MultiLanguageChecker) checkQualityRules(content, filePath string, lang *LanguageConfig) []models.Issue {
 	var issues []models.Issue
 	lines := strings.Split(content, "\n")
-	
+
 	for _, rule := range lang.QualityRules {
 		for lineNum, line := range lines {
 			if rule.Pattern.MatchString(line) {
@@ -151,7 +151,7 @@ func (m *MultiLanguageChecker) checkQualityRules(content, filePath string, lang 
 					File:     filePath,
 					Line:     lineNum + 1,
 					Column:   1,
-					Severity: rule.Severity,
+					Severity: models.SeverityLevel(rule.Severity),
 					Message:  rule.Description,
 					Category: rule.Category,
 					Fix:      rule.Fix,
@@ -159,7 +159,7 @@ func (m *MultiLanguageChecker) checkQualityRules(content, filePath string, lang 
 			}
 		}
 	}
-	
+
 	return issues
 }
 
@@ -169,24 +169,24 @@ func (m *MultiLanguageChecker) checkComplexity(content, filePath string, lang *L
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	lineNum := 0
 	complexity := 0
-	
+
 	for scanner.Scan() {
 		lineNum++
 		line := scanner.Text()
-		
+
 		for _, rule := range lang.ComplexityRules {
 			if rule.Pattern.MatchString(line) {
 				complexity += rule.Weight
 			}
 		}
-		
+
 		// Check if complexity threshold is exceeded
 		if complexity > 10 { // Configurable threshold
 			issues = append(issues, models.Issue{
 				File:     filePath,
 				Line:     lineNum,
 				Column:   1,
-				Severity: "medium",
+				Severity: models.SeverityWarning,
 				Message:  fmt.Sprintf("High complexity detected (score: %d)", complexity),
 				Category: "complexity",
 				Fix:      "Consider breaking this code into smaller functions",
@@ -194,7 +194,7 @@ func (m *MultiLanguageChecker) checkComplexity(content, filePath string, lang *L
 			complexity = 0 // Reset for next section
 		}
 	}
-	
+
 	return issues
 }
 
@@ -329,7 +329,7 @@ func (m *MultiLanguageChecker) createTypeScriptConfig() *LanguageConfig {
 	config := m.createJavaScriptConfig()
 	config.Name = "TypeScript"
 	config.Extensions = []string{".ts", ".tsx"}
-	
+
 	// Add TypeScript-specific rules
 	config.QualityRules = append(config.QualityRules, QualityRule{
 		Pattern:     regexp.MustCompile(`:\s*any\b`),
@@ -338,7 +338,7 @@ func (m *MultiLanguageChecker) createTypeScriptConfig() *LanguageConfig {
 		Category:    "type-safety",
 		Fix:         "Define specific types or interfaces",
 	})
-	
+
 	return config
 }
 

@@ -7,9 +7,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+
+	"kodevibe/internal/models"
 
 	"github.com/fatih/color"
-	"kodevibe/internal/models"
 )
 
 // InteractiveUI provides an enhanced CLI experience
@@ -72,7 +74,7 @@ func (ui *InteractiveUI) ShowMainMenu() int {
 	fmt.Println("   6. 🔗 MCP Integration")
 	fmt.Println("   7. ❓ Help & Documentation")
 	fmt.Println("   8. 🚪 Exit")
-	
+
 	return ui.GetMenuChoice(1, 8)
 }
 
@@ -119,13 +121,13 @@ func (ui *InteractiveUI) GetYesNo(prompt string) bool {
 // ShowProgress displays a progress indicator
 func (ui *InteractiveUI) ShowProgress(message string, duration time.Duration) {
 	ui.output.Printf("🔄 %s", message)
-	
+
 	ticker := time.NewTicker(duration / 20)
 	defer ticker.Stop()
-	
+
 	progress := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	i := 0
-	
+
 	for range ticker.C {
 		fmt.Printf("\r🔄 %s %s", message, progress[i%len(progress)])
 		i++
@@ -142,16 +144,16 @@ func (ui *InteractiveUI) DisplayVibesSelection() []string {
 		"security", "performance", "readability", "maintainability",
 		"testing", "documentation", "complexity",
 	}
-	
+
 	fmt.Println("\n🎯 Select Vibes to Analyze:")
 	for i, vibe := range vibes {
-		fmt.Printf("   %d. %s\n", i+1, strings.Title(vibe))
+		fmt.Printf("   %d. %s\n", i+1, toTitle(vibe))
 	}
 	fmt.Println("   8. All Vibes")
 	fmt.Println("   9. Custom Selection")
-	
+
 	choice := ui.GetMenuChoice(1, 9)
-	
+
 	switch choice {
 	case 8:
 		return vibes
@@ -165,15 +167,15 @@ func (ui *InteractiveUI) DisplayVibesSelection() []string {
 // GetCustomVibesSelection allows multiple vibe selection
 func (ui *InteractiveUI) GetCustomVibesSelection(available []string) []string {
 	var selected []string
-	
+
 	fmt.Println("\n🎯 Select multiple vibes (comma-separated numbers):")
 	for i, vibe := range available {
-		fmt.Printf("   %d. %s\n", i+1, strings.Title(vibe))
+		fmt.Printf("   %d. %s\n", i+1, toTitle(vibe))
 	}
-	
+
 	input := ui.GetInput("   Enter your selection: ")
 	selections := strings.Split(input, ",")
-	
+
 	for _, sel := range selections {
 		if idx, err := strconv.Atoi(strings.TrimSpace(sel)); err == nil {
 			if idx >= 1 && idx <= len(available) {
@@ -181,12 +183,12 @@ func (ui *InteractiveUI) GetCustomVibesSelection(available []string) []string {
 			}
 		}
 	}
-	
+
 	if len(selected) == 0 {
 		ui.warning.Println("   No valid selections made. Using all vibes.")
 		return available
 	}
-	
+
 	ui.success.Printf("   Selected: %s\n", strings.Join(selected, ", "))
 	return selected
 }
@@ -196,21 +198,21 @@ func (ui *InteractiveUI) DisplayAnalysisResults(results *models.AnalysisResult) 
 	ui.ClearScreen()
 	ui.success.Println("📊 Analysis Results")
 	fmt.Println("═══════════════════")
-	
+
 	// Overall Score
 	ui.DisplayOverallScore(results.OverallScore)
-	
+
 	// Individual Vibe Results
 	fmt.Println("\n📋 Detailed Results:")
 	for _, result := range results.VibeResults {
 		ui.DisplayVibeResult(result)
 	}
-	
+
 	// Issues Summary
 	if len(results.Issues) > 0 {
 		ui.DisplayIssuesSummary(results.Issues)
 	}
-	
+
 	// Recommendations
 	if len(results.Recommendations) > 0 {
 		ui.DisplayRecommendations(results.Recommendations)
@@ -220,7 +222,7 @@ func (ui *InteractiveUI) DisplayAnalysisResults(results *models.AnalysisResult) 
 // DisplayOverallScore shows the overall analysis score
 func (ui *InteractiveUI) DisplayOverallScore(score float64) {
 	fmt.Printf("\n🎯 Overall Score: ")
-	
+
 	switch {
 	case score >= 90:
 		ui.success.Printf("%.1f/100 ⭐⭐⭐⭐⭐ Excellent!\n", score)
@@ -237,8 +239,8 @@ func (ui *InteractiveUI) DisplayOverallScore(score float64) {
 
 // DisplayVibeResult shows individual vibe analysis results
 func (ui *InteractiveUI) DisplayVibeResult(result models.VibeResult) {
-	fmt.Printf("\n   🔹 %s: ", strings.Title(result.Name))
-	
+	fmt.Printf("\n   🔹 %s: ", toTitle(result.Name))
+
 	switch {
 	case result.Score >= 90:
 		ui.success.Printf("%.1f/100 ✅\n", result.Score)
@@ -247,7 +249,7 @@ func (ui *InteractiveUI) DisplayVibeResult(result models.VibeResult) {
 	default:
 		ui.error.Printf("%.1f/100 ❌\n", result.Score)
 	}
-	
+
 	if result.Details != "" {
 		fmt.Printf("      %s\n", result.Details)
 	}
@@ -256,37 +258,40 @@ func (ui *InteractiveUI) DisplayVibeResult(result models.VibeResult) {
 // DisplayIssuesSummary shows found issues
 func (ui *InteractiveUI) DisplayIssuesSummary(issues []models.Issue) {
 	fmt.Println("\n🚨 Issues Found:")
-	
+
 	severityCount := make(map[string]int)
 	for _, issue := range issues {
-		severityCount[issue.Severity]++
-		
+		severityCount[string(issue.Severity)]++
+
 		var severityColor *color.Color
 		switch issue.Severity {
-		case "high":
+		case models.SeverityCritical, models.SeverityError:
 			severityColor = ui.error
-		case "medium":
+		case models.SeverityWarning:
 			severityColor = ui.warning
 		default:
 			severityColor = ui.output
 		}
-		
-		severityColor.Printf("   [%s] %s:%d - %s\n", 
-			strings.ToUpper(issue.Severity), 
-			issue.File, 
-			issue.Line, 
+
+		severityColor.Printf("   [%s] %s:%d - %s\n",
+			strings.ToUpper(string(issue.Severity)),
+			issue.File,
+			issue.Line,
 			issue.Message)
 	}
-	
+
 	fmt.Printf("\n📈 Summary: ")
-	if count := severityCount["high"]; count > 0 {
-		ui.error.Printf("%d High ", count)
+	if count := severityCount[string(models.SeverityCritical)]; count > 0 {
+		ui.error.Printf("%d Critical ", count)
 	}
-	if count := severityCount["medium"]; count > 0 {
-		ui.warning.Printf("%d Medium ", count)
+	if count := severityCount[string(models.SeverityError)]; count > 0 {
+		ui.error.Printf("%d Error ", count)
 	}
-	if count := severityCount["low"]; count > 0 {
-		ui.output.Printf("%d Low ", count)
+	if count := severityCount[string(models.SeverityWarning)]; count > 0 {
+		ui.warning.Printf("%d Warning ", count)
+	}
+	if count := severityCount[string(models.SeverityInfo)]; count > 0 {
+		ui.output.Printf("%d Info ", count)
 	}
 	fmt.Println("issues found")
 }
@@ -322,18 +327,18 @@ func (ui *InteractiveUI) ShowHelp() {
 	fmt.Println("   • Testing: Reviews test coverage and quality")
 	fmt.Println("   • Documentation: Checks documentation completeness")
 	fmt.Println("   • Complexity: Measures code complexity metrics")
-	
+
 	fmt.Println("\n🚀 Quick Start:")
 	fmt.Println("   1. Select 'Quick Analysis' from the main menu")
 	fmt.Println("   2. Choose your target directory")
 	fmt.Println("   3. Select which vibes to run")
 	fmt.Println("   4. Review the generated report")
-	
+
 	fmt.Println("\n🌐 Web Interface:")
 	fmt.Println("   • Access real-time dashboards")
 	fmt.Println("   • Interactive report viewing")
 	fmt.Println("   • Export capabilities")
-	
+
 	fmt.Println("\n🔗 MCP Integration:")
 	fmt.Println("   • Connect with AI development workflows")
 	fmt.Println("   • Enhanced context sharing")
@@ -359,4 +364,14 @@ func (ui *InteractiveUI) DisplaySuccess(message string) {
 // DisplayWarning shows a warning message
 func (ui *InteractiveUI) DisplayWarning(message string) {
 	ui.warning.Printf("⚠️  %s\n", message)
+}
+
+// toTitle converts string to title case without deprecated strings.Title
+func toTitle(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }

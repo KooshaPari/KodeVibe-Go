@@ -60,19 +60,19 @@ func (h *HTMLReportGenerator) GenerateReport(result *models.AnalysisResult, proj
 
 // ReportData contains all data needed for the HTML report
 type ReportData struct {
-	ProjectName     string                 `json:"projectName"`
-	GeneratedAt     time.Time              `json:"generatedAt"`
-	OverallScore    float64                `json:"overallScore"`
-	TotalFiles      int                    `json:"totalFiles"`
-	TotalLines      int                    `json:"totalLines"`
-	AnalysisDuration time.Duration         `json:"analysisDuration"`
-	VibeResults     []models.VibeResult    `json:"vibeResults"`
-	Issues          []models.Issue         `json:"issues"`
-	Recommendations []string               `json:"recommendations"`
-	ScoreHistory    []ScorePoint           `json:"scoreHistory"`
-	FileMetrics     []FileMetric           `json:"fileMetrics"`
-	SecurityIssues  []SecurityIssue        `json:"securityIssues"`
-	PerformanceData PerformanceMetrics     `json:"performanceData"`
+	ProjectName      string              `json:"projectName"`
+	GeneratedAt      time.Time           `json:"generatedAt"`
+	OverallScore     float64             `json:"overallScore"`
+	TotalFiles       int                 `json:"totalFiles"`
+	TotalLines       int                 `json:"totalLines"`
+	AnalysisDuration time.Duration       `json:"analysisDuration"`
+	VibeResults      []models.VibeResult `json:"vibeResults"`
+	Issues           []models.Issue      `json:"issues"`
+	Recommendations  []string            `json:"recommendations"`
+	ScoreHistory     []ScorePoint        `json:"scoreHistory"`
+	FileMetrics      []FileMetric        `json:"fileMetrics"`
+	SecurityIssues   []SecurityIssue     `json:"securityIssues"`
+	PerformanceData  PerformanceMetrics  `json:"performanceData"`
 }
 
 type ScorePoint struct {
@@ -82,50 +82,50 @@ type ScorePoint struct {
 }
 
 type FileMetric struct {
-	Path           string  `json:"path"`
-	Lines          int     `json:"lines"`
-	Complexity     int     `json:"complexity"`
-	Coverage       float64 `json:"coverage"`
-	Score          float64 `json:"score"`
-	Issues         int     `json:"issues"`
-	LastModified   time.Time `json:"lastModified"`
+	Path         string    `json:"path"`
+	Lines        int       `json:"lines"`
+	Complexity   int       `json:"complexity"`
+	Coverage     float64   `json:"coverage"`
+	Score        float64   `json:"score"`
+	Issues       int       `json:"issues"`
+	LastModified time.Time `json:"lastModified"`
 }
 
 type SecurityIssue struct {
-	Severity     string `json:"severity"`
-	Category     string `json:"category"`
-	File         string `json:"file"`
-	Line         int    `json:"line"`
-	Description  string `json:"description"`
-	Remediation  string `json:"remediation"`
-	CWE          string `json:"cwe,omitempty"`
+	Severity    string `json:"severity"`
+	Category    string `json:"category"`
+	File        string `json:"file"`
+	Line        int    `json:"line"`
+	Description string `json:"description"`
+	Remediation string `json:"remediation"`
+	CWE         string `json:"cwe,omitempty"`
 }
 
 type PerformanceMetrics struct {
-	MemoryUsage    int64   `json:"memoryUsage"`
-	ExecutionTime  float64 `json:"executionTime"`
-	FilesPerSecond float64 `json:"filesPerSecond"`
+	MemoryUsage    int64    `json:"memoryUsage"`
+	ExecutionTime  float64  `json:"executionTime"`
+	FilesPerSecond float64  `json:"filesPerSecond"`
 	Bottlenecks    []string `json:"bottlenecks"`
 }
 
 // prepareReportData prepares all data for the HTML report
 func (h *HTMLReportGenerator) prepareReportData(result *models.AnalysisResult, projectPath string) *ReportData {
 	projectName := filepath.Base(projectPath)
-	
+
 	return &ReportData{
-		ProjectName:     projectName,
-		GeneratedAt:     time.Now(),
-		OverallScore:    result.OverallScore,
-		TotalFiles:      result.FilesAnalyzed,
-		TotalLines:      result.LinesAnalyzed,
+		ProjectName:      projectName,
+		GeneratedAt:      time.Now(),
+		OverallScore:     result.OverallScore,
+		TotalFiles:       result.FilesAnalyzed,
+		TotalLines:       result.LinesAnalyzed,
 		AnalysisDuration: result.Duration,
-		VibeResults:     result.VibeResults,
-		Issues:          result.Issues,
-		Recommendations: result.Recommendations,
-		ScoreHistory:    h.generateScoreHistory(result),
-		FileMetrics:     h.generateFileMetrics(result),
-		SecurityIssues:  h.extractSecurityIssues(result.Issues),
-		PerformanceData: h.generatePerformanceMetrics(result),
+		VibeResults:      result.VibeResults,
+		Issues:           result.Issues,
+		Recommendations:  result.Recommendations,
+		ScoreHistory:     h.generateScoreHistory(result),
+		FileMetrics:      h.generateFileMetrics(result),
+		SecurityIssues:   h.extractSecurityIssues(result.Issues),
+		PerformanceData:  h.generatePerformanceMetrics(result),
 	}
 }
 
@@ -203,7 +203,7 @@ func (h *HTMLReportGenerator) generateScoreHistory(result *models.AnalysisResult
 
 func (h *HTMLReportGenerator) generateFileMetrics(result *models.AnalysisResult) []FileMetric {
 	var metrics []FileMetric
-	
+
 	// Group issues by file
 	fileIssues := make(map[string]int)
 	for _, issue := range result.Issues {
@@ -232,7 +232,7 @@ func (h *HTMLReportGenerator) extractSecurityIssues(issues []models.Issue) []Sec
 	for _, issue := range issues {
 		if issue.Category == "security" {
 			securityIssues = append(securityIssues, SecurityIssue{
-				Severity:    issue.Severity,
+				Severity:    string(issue.Severity),
 				Category:    "Security",
 				File:        issue.File,
 				Line:        issue.Line,
@@ -285,11 +285,11 @@ func extractCWE(message string) string {
 }
 
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || 
-		(len(s) > len(substr) && 
-			(s[:len(substr)] == substr || 
-			 s[len(s)-len(substr):] == substr ||
-			 findInString(s, substr))))
+	return len(s) >= len(substr) && (s == substr ||
+		(len(s) > len(substr) &&
+			(s[:len(substr)] == substr ||
+				s[len(s)-len(substr):] == substr ||
+				findInString(s, substr))))
 }
 
 func findInString(s, substr string) bool {

@@ -65,7 +65,7 @@ func TestMCPContext_Creation(t *testing.T) {
 
 func TestMCPClient_BasicCreation(t *testing.T) {
 	client := NewMCPClient("http://localhost:8080", "test-key")
-	
+
 	assert.NotNil(t, client)
 	assert.Equal(t, "http://localhost:8080", client.baseURL)
 	assert.Equal(t, "test-key", client.apiKey)

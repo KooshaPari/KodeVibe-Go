@@ -7,34 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"kodevibe/internal/models"
+
+	"github.com/stretchr/testify/assert"
 )
-
-// mockScanner implements a mock scanner for testing user input
-type mockScanner struct {
-	inputs []string
-	index  int
-}
-
-func (m *mockScanner) Scan() bool {
-	if m.index >= len(m.inputs) {
-		return false
-	}
-	m.index++
-	return true
-}
-
-func (m *mockScanner) Text() string {
-	if m.index <= 0 || m.index > len(m.inputs) {
-		return ""
-	}
-	return m.inputs[m.index-1]
-}
 
 func newMockInteractiveUI(inputs []string) *InteractiveUI {
 	ui := NewInteractiveUI()
-	ui.scanner = &mockScanner{inputs: inputs}
+	// Create a buffer with the input lines
+	inputText := strings.Join(inputs, "\n")
+	ui.scanner = bufio.NewScanner(bytes.NewBufferString(inputText))
 	return ui
 }
 
@@ -207,7 +189,7 @@ func TestInteractiveUI_DisplayVibesSelection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ui := newMockInteractiveUI([]string{tt.input})
-			
+
 			// For custom selection, we need to mock the custom selection as well
 			if tt.input == "9" {
 				ui = newMockInteractiveUI([]string{tt.input, "1,2"}) // Select security and performance
@@ -216,7 +198,7 @@ func TestInteractiveUI_DisplayVibesSelection(t *testing.T) {
 				assert.Contains(t, []string{"security", "performance"}, result[0])
 				return
 			}
-			
+
 			result := ui.DisplayVibesSelection()
 			if tt.input != "9" {
 				assert.Equal(t, tt.expected, result)
@@ -227,7 +209,7 @@ func TestInteractiveUI_DisplayVibesSelection(t *testing.T) {
 
 func TestInteractiveUI_GetCustomVibesSelection(t *testing.T) {
 	available := []string{"security", "performance", "readability", "maintainability", "testing", "documentation", "complexity"}
-	
+
 	tests := []struct {
 		name     string
 		input    string
@@ -309,25 +291,23 @@ func TestInteractiveUI_DisplayAnalysisResults(t *testing.T) {
 	}
 
 	ui := NewInteractiveUI()
-	
+
 	// Capture output by redirecting stdout
 	var output bytes.Buffer
 	originalOutput := ui.output
-	
+
 	// This test mainly ensures no panics occur during display
 	// In a real scenario, you'd mock the output to capture and verify the display
 	assert.NotPanics(t, func() {
 		ui.DisplayAnalysisResults(result)
 	})
-	
+
 	// Restore original output
 	ui.output = originalOutput
 	_ = output // Use the output variable to avoid unused variable error
 }
 
 func TestInteractiveUI_ScoreCircleColor(t *testing.T) {
-	ui := NewInteractiveUI()
-	
 	// Test different score ranges
 	tests := []struct {
 		score         float64
@@ -348,7 +328,7 @@ func TestInteractiveUI_ScoreCircleColor(t *testing.T) {
 			case tt.score >= 90:
 				grade = "Excellent"
 			case tt.score >= 80:
-				grade = "Very Good"  
+				grade = "Very Good"
 			case tt.score >= 70:
 				grade = "Good"
 			case tt.score >= 60:
@@ -363,23 +343,23 @@ func TestInteractiveUI_ScoreCircleColor(t *testing.T) {
 
 func TestInteractiveUI_IssuesSeverityDisplay(t *testing.T) {
 	issues := []models.Issue{
-		{Severity: "high", File: "test1.go", Line: 10, Message: "Critical issue"},
-		{Severity: "medium", File: "test2.go", Line: 20, Message: "Warning issue"},
-		{Severity: "low", File: "test3.go", Line: 30, Message: "Info issue"},
-		{Severity: "high", File: "test4.go", Line: 40, Message: "Another critical issue"},
+		{Severity: models.SeverityError, File: "test1.go", Line: 10, Message: "Critical issue"},
+		{Severity: models.SeverityWarning, File: "test2.go", Line: 20, Message: "Warning issue"},
+		{Severity: models.SeverityInfo, File: "test3.go", Line: 30, Message: "Info issue"},
+		{Severity: models.SeverityError, File: "test4.go", Line: 40, Message: "Another critical issue"},
 	}
 
 	ui := NewInteractiveUI()
-	
+
 	// Count issues by severity
 	severityCount := make(map[string]int)
 	for _, issue := range issues {
-		severityCount[issue.Severity]++
+		severityCount[string(issue.Severity)]++
 	}
 
-	assert.Equal(t, 2, severityCount["high"])
-	assert.Equal(t, 1, severityCount["medium"])
-	assert.Equal(t, 1, severityCount["low"])
+	assert.Equal(t, 2, severityCount[string(models.SeverityError)])
+	assert.Equal(t, 1, severityCount[string(models.SeverityWarning)])
+	assert.Equal(t, 1, severityCount[string(models.SeverityInfo)])
 
 	// Test that display doesn't panic
 	assert.NotPanics(t, func() {
@@ -389,7 +369,7 @@ func TestInteractiveUI_IssuesSeverityDisplay(t *testing.T) {
 
 func TestInteractiveUI_ProgressDisplay(t *testing.T) {
 	ui := NewInteractiveUI()
-	
+
 	// Test progress display with short duration
 	assert.NotPanics(t, func() {
 		ui.ShowProgress("Testing progress", 100*time.Millisecond)
@@ -398,11 +378,11 @@ func TestInteractiveUI_ProgressDisplay(t *testing.T) {
 
 func TestInteractiveUI_InputValidation(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		min      int
-		max      int
-		isValid  bool
+		name    string
+		input   string
+		min     int
+		max     int
+		isValid bool
 	}{
 		{
 			name:    "valid input within range",
@@ -460,23 +440,31 @@ func parseChoice(input string) (int, error) {
 	if input == "" {
 		return 0, assert.AnError
 	}
-	
+
 	// Simple integer parsing simulation
 	switch input {
-	case "1": return 1, nil
-	case "2": return 2, nil
-	case "3": return 3, nil
-	case "4": return 4, nil
-	case "5": return 5, nil
-	case "6": return 6, nil
-	case "0": return 0, nil
-	default: return 0, assert.AnError
+	case "1":
+		return 1, nil
+	case "2":
+		return 2, nil
+	case "3":
+		return 3, nil
+	case "4":
+		return 4, nil
+	case "5":
+		return 5, nil
+	case "6":
+		return 6, nil
+	case "0":
+		return 0, nil
+	default:
+		return 0, assert.AnError
 	}
 }
 
 func TestInteractiveUI_HelpDisplay(t *testing.T) {
 	ui := NewInteractiveUI()
-	
+
 	// Test that help display doesn't panic
 	assert.NotPanics(t, func() {
 		ui.ShowHelp()
@@ -485,7 +473,7 @@ func TestInteractiveUI_HelpDisplay(t *testing.T) {
 
 func TestInteractiveUI_AdvancedOptionsDisplay(t *testing.T) {
 	ui := NewInteractiveUI()
-	
+
 	// Test that advanced options display doesn't panic
 	assert.NotPanics(t, func() {
 		ui.ShowAdvancedOptions()
@@ -494,10 +482,10 @@ func TestInteractiveUI_AdvancedOptionsDisplay(t *testing.T) {
 
 func TestInteractiveUI_ErrorWarningSuccessMessages(t *testing.T) {
 	ui := NewInteractiveUI()
-	
+
 	testMessages := []string{
 		"This is a test error message",
-		"This is a test warning message", 
+		"This is a test warning message",
 		"This is a test success message",
 	}
 
@@ -558,11 +546,11 @@ func BenchmarkInteractiveUI_DisplayAnalysisResults(b *testing.B) {
 
 func BenchmarkInteractiveUI_GetMenuChoice(b *testing.B) {
 	ui := newMockInteractiveUI([]string{"3"})
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Reset scanner for each iteration
-		ui.scanner = &mockScanner{inputs: []string{"3"}, index: 0}
+		ui.scanner = bufio.NewScanner(bytes.NewBufferString("3"))
 		ui.GetMenuChoice(1, 5)
 	}
 }
@@ -572,12 +560,12 @@ func TestInteractiveUI_EdgeCases(t *testing.T) {
 	t.Run("empty vibe results", func(t *testing.T) {
 		ui := NewInteractiveUI()
 		result := &models.AnalysisResult{
-			OverallScore:  0,
-			VibeResults:   []models.VibeResult{},
-			Issues:        []models.Issue{},
+			OverallScore:    0,
+			VibeResults:     []models.VibeResult{},
+			Issues:          []models.Issue{},
 			Recommendations: []string{},
 		}
-		
+
 		assert.NotPanics(t, func() {
 			ui.DisplayAnalysisResults(result)
 		})
@@ -594,7 +582,7 @@ func TestInteractiveUI_EdgeCases(t *testing.T) {
 				Message:  "Test issue",
 			}
 		}
-		
+
 		assert.NotPanics(t, func() {
 			ui.DisplayIssuesSummary(issues)
 		})
@@ -609,7 +597,7 @@ func TestInteractiveUI_EdgeCases(t *testing.T) {
 			Severity: "high",
 			Message:  "Test issue with very long file path",
 		}
-		
+
 		assert.NotPanics(t, func() {
 			ui.DisplayIssuesSummary([]models.Issue{issue})
 		})

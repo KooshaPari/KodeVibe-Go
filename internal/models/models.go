@@ -6,14 +6,14 @@ import (
 
 // AnalysisResult represents the complete analysis results
 type AnalysisResult struct {
-	OverallScore    float64      `json:"overall_score"`
-	FilesAnalyzed   int          `json:"files_analyzed"`
-	LinesAnalyzed   int          `json:"lines_analyzed"`
+	OverallScore    float64       `json:"overall_score"`
+	FilesAnalyzed   int           `json:"files_analyzed"`
+	LinesAnalyzed   int           `json:"lines_analyzed"`
 	Duration        time.Duration `json:"duration"`
-	VibeResults     []VibeResult `json:"vibe_results"`
-	Issues          []Issue      `json:"issues"`
-	Recommendations []string     `json:"recommendations"`
-	Timestamp       time.Time    `json:"timestamp"`
+	VibeResults     []VibeResult  `json:"vibe_results"`
+	Issues          []Issue       `json:"issues"`
+	Recommendations []string      `json:"recommendations"`
+	Timestamp       time.Time     `json:"timestamp"`
 }
 
 // VibeResult represents the result of a specific vibe analysis
@@ -59,6 +59,8 @@ type Issue struct {
 	Rule          string                 `json:"rule" yaml:"rule"`
 	Pattern       string                 `json:"pattern,omitempty" yaml:"pattern,omitempty"`
 	Context       string                 `json:"context,omitempty" yaml:"context,omitempty"`
+	Category      string                 `json:"category,omitempty" yaml:"category,omitempty"`
+	Fix           string                 `json:"fix,omitempty" yaml:"fix,omitempty"`
 	Fixable       bool                   `json:"fixable" yaml:"fixable"`
 	FixSuggestion string                 `json:"fix_suggestion,omitempty" yaml:"fix_suggestion,omitempty"`
 	Confidence    float64                `json:"confidence" yaml:"confidence"`
@@ -77,6 +79,7 @@ type ScanResult struct {
 	ProjectPath   string                 `json:"project_path" yaml:"project_path"`
 	FilesScanned  int                    `json:"files_scanned" yaml:"files_scanned"`
 	FilesSkipped  int                    `json:"files_skipped" yaml:"files_skipped"`
+	Files         []string               `json:"files" yaml:"files"`
 	Issues        []Issue                `json:"issues" yaml:"issues"`
 	Summary       ScanSummary            `json:"summary" yaml:"summary"`
 	Configuration *Configuration         `json:"configuration,omitempty" yaml:"configuration,omitempty"`
@@ -503,9 +506,13 @@ func (vc *VibeConfig) IsEnabled() bool {
 type ScanSummary struct {
 	TotalIssues      int                   `json:"total_issues" yaml:"total_issues"`
 	CriticalIssues   int                   `json:"critical_issues" yaml:"critical_issues"`
+	CriticalCount    int                   `json:"critical_count" yaml:"critical_count"`
 	ErrorIssues      int                   `json:"error_issues" yaml:"error_issues"`
+	ErrorCount       int                   `json:"error_count" yaml:"error_count"`
 	WarningIssues    int                   `json:"warning_issues" yaml:"warning_issues"`
+	WarningCount     int                   `json:"warning_count" yaml:"warning_count"`
 	InfoIssues       int                   `json:"info_issues" yaml:"info_issues"`
+	InfoCount        int                   `json:"info_count" yaml:"info_count"`
 	FilesScanned     int                   `json:"files_scanned" yaml:"files_scanned"`
 	IssuesByType     map[VibeType]int      `json:"issues_by_type" yaml:"issues_by_type"`
 	IssuesBySeverity map[SeverityLevel]int `json:"issues_by_severity" yaml:"issues_by_severity"`

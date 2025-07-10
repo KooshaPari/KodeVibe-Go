@@ -43,15 +43,15 @@ type HistoricalScore struct {
 
 // ScoringMetrics contains detailed scoring information
 type ScoringMetrics struct {
-	BaseScore        float64
-	WeightedScore    float64
-	FinalScore       float64
-	Grade            string
-	Confidence       float64
-	Breakdown        map[string]float64
-	Penalties        map[string]float64
-	Bonuses          map[string]float64
-	TrendAdjustment  float64
+	BaseScore         float64
+	WeightedScore     float64
+	FinalScore        float64
+	Grade             string
+	Confidence        float64
+	Breakdown         map[string]float64
+	Penalties         map[string]float64
+	Bonuses           map[string]float64
+	TrendAdjustment   float64
 	QualityIndicators map[string]float64
 }
 
@@ -77,12 +77,12 @@ func NewAdvancedScoringEngine() *AdvancedScoringEngine {
 			"complexity":      {Excellent: 85, Good: 70, Fair: 50, Poor: 30},
 		},
 		penalties: map[string]float64{
-			"high_severity_issues":    -15.0,
+			"high_severity_issues":     -15.0,
 			"critical_vulnerabilities": -25.0,
-			"poor_test_coverage":     -10.0,
-			"high_complexity":        -8.0,
-			"missing_documentation":  -5.0,
-			"performance_bottlenecks": -12.0,
+			"poor_test_coverage":       -10.0,
+			"high_complexity":          -8.0,
+			"missing_documentation":    -5.0,
+			"performance_bottlenecks":  -12.0,
 		},
 		bonuses: map[string]float64{
 			"excellent_test_coverage": 5.0,
@@ -109,60 +109,60 @@ func (e *AdvancedScoringEngine) CalculateAdvancedScore(result *models.AnalysisRe
 
 	// Calculate base scores for each vibe
 	vibeScores := e.calculateVibeScores(result.VibeResults)
-	
+
 	// Calculate weighted average
 	weightedSum := 0.0
 	totalWeight := 0.0
-	
+
 	for vibe, score := range vibeScores {
 		weight := e.weights[vibe]
 		weightedSum += score * weight
 		totalWeight += weight
 		metrics.Breakdown[vibe] = score
 	}
-	
+
 	metrics.BaseScore = weightedSum / totalWeight
 	metrics.WeightedScore = metrics.BaseScore
 
 	// Apply issue-based penalties
 	e.applyIssuePenalties(result.Issues, metrics)
-	
+
 	// Apply quality bonuses
 	e.applyQualityBonuses(result, metrics)
-	
+
 	// Apply trend adjustments
 	e.applyTrendAdjustments(result, metrics)
-	
+
 	// Calculate confidence score
 	metrics.Confidence = e.calculateConfidence(result, metrics)
-	
+
 	// Calculate final score
 	metrics.FinalScore = math.Max(0, math.Min(100, metrics.WeightedScore))
-	
+
 	// Assign grade
 	metrics.Grade = e.assignGrade(metrics.FinalScore)
-	
+
 	// Calculate quality indicators
 	e.calculateQualityIndicators(result, metrics)
-	
+
 	// Update trend analysis
 	e.updateTrendAnalysis(result, metrics.FinalScore)
-	
+
 	return metrics
 }
 
 // calculateVibeScores computes individual vibe scores with advanced algorithms
 func (e *AdvancedScoringEngine) calculateVibeScores(vibeResults []models.VibeResult) map[string]float64 {
 	scores := make(map[string]float64)
-	
+
 	for _, vibe := range vibeResults {
 		threshold := e.thresholds[vibe.Name]
-		
+
 		// Apply non-linear scoring curve
 		normalizedScore := e.applyScoreCurve(vibe.Score, threshold)
 		scores[vibe.Name] = normalizedScore
 	}
-	
+
 	return scores
 }
 
@@ -174,17 +174,17 @@ func (e *AdvancedScoringEngine) applyScoreCurve(rawScore float64, threshold Scor
 		excess := rawScore - threshold.Excellent
 		boost := math.Log1p(excess) * 2
 		return math.Min(100, rawScore+boost)
-		
+
 	case rawScore >= threshold.Good:
 		// Good range: linear scaling
 		return rawScore
-		
+
 	case rawScore >= threshold.Fair:
 		// Fair range: apply mild penalty
 		deficit := threshold.Good - rawScore
 		penalty := math.Sqrt(deficit) * 0.5
 		return math.Max(threshold.Fair, rawScore-penalty)
-		
+
 	default:
 		// Poor range: apply steeper penalty
 		deficit := threshold.Fair - rawScore
@@ -196,14 +196,14 @@ func (e *AdvancedScoringEngine) applyScoreCurve(rawScore float64, threshold Scor
 // applyIssuePenalties applies penalties based on issues found
 func (e *AdvancedScoringEngine) applyIssuePenalties(issues []models.Issue, metrics *ScoringMetrics) {
 	severityCounts := e.countIssuesBySeverity(issues)
-	
+
 	// High severity issues penalty
 	if severityCounts["high"] > 0 {
 		penalty := float64(severityCounts["high"]) * e.penalties["high_severity_issues"]
 		metrics.Penalties["high_severity_issues"] = penalty
 		metrics.WeightedScore += penalty
 	}
-	
+
 	// Critical vulnerabilities penalty
 	criticalSecurity := e.countCriticalSecurityIssues(issues)
 	if criticalSecurity > 0 {
@@ -211,7 +211,7 @@ func (e *AdvancedScoringEngine) applyIssuePenalties(issues []models.Issue, metri
 		metrics.Penalties["critical_vulnerabilities"] = penalty
 		metrics.WeightedScore += penalty
 	}
-	
+
 	// Complexity penalty
 	complexityIssues := e.countComplexityIssues(issues)
 	if complexityIssues > 5 {
@@ -230,7 +230,7 @@ func (e *AdvancedScoringEngine) applyQualityBonuses(result *models.AnalysisResul
 		metrics.Bonuses["excellent_test_coverage"] = bonus
 		metrics.WeightedScore += bonus
 	}
-	
+
 	// Documentation bonus
 	docQuality := e.evaluateDocumentationQuality(result)
 	if docQuality > 85 {
@@ -238,7 +238,7 @@ func (e *AdvancedScoringEngine) applyQualityBonuses(result *models.AnalysisResul
 		metrics.Bonuses["comprehensive_docs"] = bonus
 		metrics.WeightedScore += bonus
 	}
-	
+
 	// Clean architecture bonus
 	architectureScore := e.evaluateArchitectureQuality(result)
 	if architectureScore > 90 {
@@ -246,7 +246,7 @@ func (e *AdvancedScoringEngine) applyQualityBonuses(result *models.AnalysisResul
 		metrics.Bonuses["clean_architecture"] = bonus
 		metrics.WeightedScore += bonus
 	}
-	
+
 	// Security best practices bonus
 	securityScore := e.getVibeScore(result.VibeResults, "security")
 	if securityScore > 95 {
@@ -262,27 +262,27 @@ func (e *AdvancedScoringEngine) applyTrendAdjustments(result *models.AnalysisRes
 		metrics.TrendAdjustment = 0
 		return
 	}
-	
+
 	// Calculate trend direction and strength
 	e.calculateTrendMetrics()
-	
+
 	// Apply trend-based adjustments
 	switch e.trendAnalysis.TrendDirection {
 	case "improving":
 		// Reward consistent improvement
 		adjustment := e.trendAnalysis.TrendStrength * e.trendAnalysis.Momentum * 2.0
 		metrics.TrendAdjustment = math.Min(5, adjustment)
-		
+
 	case "declining":
 		// Penalize decline, but less harshly if recent
 		adjustment := e.trendAnalysis.TrendStrength * e.trendAnalysis.Momentum * -1.5
 		metrics.TrendAdjustment = math.Max(-8, adjustment)
-		
+
 	default:
 		// Stable trend - small positive adjustment for consistency
 		metrics.TrendAdjustment = 0.5
 	}
-	
+
 	metrics.WeightedScore += metrics.TrendAdjustment
 }
 
@@ -294,13 +294,13 @@ func (e *AdvancedScoringEngine) calculateConfidence(result *models.AnalysisResul
 		e.calculateConsistencyFactor(metrics),
 		e.calculateHistoryFactor(),
 	}
-	
+
 	// Calculate weighted average of confidence factors
 	totalConfidence := 0.0
 	for _, factor := range factors {
 		totalConfidence += factor
 	}
-	
+
 	return totalConfidence / float64(len(factors))
 }
 
@@ -404,18 +404,18 @@ func (e *AdvancedScoringEngine) calculateTrendMetrics() {
 	if len(e.trendAnalysis.HistoricalScores) < 3 {
 		return
 	}
-	
+
 	// Sort by timestamp
 	scores := make([]HistoricalScore, len(e.trendAnalysis.HistoricalScores))
 	copy(scores, e.trendAnalysis.HistoricalScores)
 	sort.Slice(scores, func(i, j int) bool {
 		return scores[i].Timestamp.Before(scores[j].Timestamp)
 	})
-	
+
 	// Calculate trend using linear regression
 	n := float64(len(scores))
 	var sumX, sumY, sumXY, sumX2 float64
-	
+
 	for i, score := range scores {
 		x := float64(i)
 		y := score.Score
@@ -424,13 +424,13 @@ func (e *AdvancedScoringEngine) calculateTrendMetrics() {
 		sumXY += x * y
 		sumX2 += x * x
 	}
-	
+
 	// Calculate slope (trend direction and strength)
 	slope := (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
-	
+
 	e.trendAnalysis.TrendStrength = math.Abs(slope) / 10 // Normalize
 	e.trendAnalysis.Momentum = slope
-	
+
 	if slope > 0.5 {
 		e.trendAnalysis.TrendDirection = "improving"
 	} else if slope < -0.5 {
@@ -464,25 +464,25 @@ func (e *AdvancedScoringEngine) calculateConsistencyFactor(metrics *ScoringMetri
 	for _, score := range metrics.Breakdown {
 		scores = append(scores, score)
 	}
-	
+
 	if len(scores) < 2 {
 		return 0.7
 	}
-	
+
 	// Calculate standard deviation
 	mean := 0.0
 	for _, score := range scores {
 		mean += score
 	}
 	mean /= float64(len(scores))
-	
+
 	variance := 0.0
 	for _, score := range scores {
 		variance += math.Pow(score-mean, 2)
 	}
 	variance /= float64(len(scores))
 	stdDev := math.Sqrt(variance)
-	
+
 	// Lower standard deviation = higher consistency = higher confidence
 	consistency := math.Max(0, 1.0-stdDev/50.0)
 	return consistency
@@ -508,7 +508,7 @@ func (e *AdvancedScoringEngine) calculateMaintainabilityIndex(result *models.Ana
 	maintainability := e.getVibeScore(result.VibeResults, "maintainability")
 	complexity := e.getVibeScore(result.VibeResults, "complexity")
 	documentation := e.getVibeScore(result.VibeResults, "documentation")
-	
+
 	// Weighted combination
 	return maintainability*0.5 + (100-complexity)*0.3 + documentation*0.2
 }
@@ -516,11 +516,11 @@ func (e *AdvancedScoringEngine) calculateMaintainabilityIndex(result *models.Ana
 func (e *AdvancedScoringEngine) calculateTechnicalDebtRatio(result *models.AnalysisResult) float64 {
 	totalIssues := len(result.Issues)
 	highSeverityIssues := e.countIssuesBySeverity(result.Issues)["high"]
-	
+
 	if totalIssues == 0 {
 		return 0
 	}
-	
+
 	// Higher ratio = more technical debt
 	return float64(highSeverityIssues) / float64(totalIssues) * 100
 }
@@ -528,29 +528,29 @@ func (e *AdvancedScoringEngine) calculateTechnicalDebtRatio(result *models.Analy
 func (e *AdvancedScoringEngine) calculateCodeHealthScore(result *models.AnalysisResult) float64 {
 	totalScore := 0.0
 	count := 0
-	
+
 	for _, vibe := range result.VibeResults {
 		totalScore += vibe.Score
 		count++
 	}
-	
+
 	if count == 0 {
 		return 0
 	}
-	
+
 	baseHealth := totalScore / float64(count)
-	
+
 	// Adjust for issue density
 	issueRatio := float64(len(result.Issues)) / float64(result.LinesAnalyzed) * 1000
 	healthAdjustment := math.Max(0, 10-issueRatio) // Penalty for high issue density
-	
+
 	return math.Min(100, baseHealth+healthAdjustment)
 }
 
 func (e *AdvancedScoringEngine) calculateSecurityPosture(result *models.AnalysisResult) float64 {
 	securityScore := e.getVibeScore(result.VibeResults, "security")
 	securityIssues := e.countCriticalSecurityIssues(result.Issues)
-	
+
 	// Penalty for security issues
 	penalty := float64(securityIssues) * 5
 	return math.Max(0, securityScore-penalty)
@@ -559,7 +559,7 @@ func (e *AdvancedScoringEngine) calculateSecurityPosture(result *models.Analysis
 func (e *AdvancedScoringEngine) calculatePerformanceIndex(result *models.AnalysisResult) float64 {
 	performanceScore := e.getVibeScore(result.VibeResults, "performance")
 	complexity := e.getVibeScore(result.VibeResults, "complexity")
-	
+
 	// Better performance with lower complexity
 	return (performanceScore + (100 - complexity)) / 2
 }
@@ -576,9 +576,9 @@ func (e *AdvancedScoringEngine) updateTrendAnalysis(result *models.AnalysisResul
 			"issues_count":   len(result.Issues),
 		},
 	}
-	
+
 	e.trendAnalysis.HistoricalScores = append(e.trendAnalysis.HistoricalScores, newScore)
-	
+
 	// Keep only last 30 scores to manage memory
 	if len(e.trendAnalysis.HistoricalScores) > 30 {
 		e.trendAnalysis.HistoricalScores = e.trendAnalysis.HistoricalScores[1:]
@@ -602,6 +602,6 @@ func (e *AdvancedScoringEngine) GetGradeDescription(grade string) string {
 		"D-": "Extremely poor code quality - complete rewrite recommended",
 		"F":  "Failed code quality standards - not production ready",
 	}
-	
+
 	return descriptions[grade]
 }

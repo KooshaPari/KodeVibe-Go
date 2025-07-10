@@ -49,44 +49,44 @@ type MCPError struct {
 
 // MCPContext provides context for AI model interactions
 type MCPContext struct {
-	ProjectPath     string                 `json:"project_path"`
-	Language        string                 `json:"language"`
-	Framework       string                 `json:"framework,omitempty"`
-	ScanResults     *models.ScanResult     `json:"scan_results,omitempty"`
-	Issues          []models.Issue         `json:"issues,omitempty"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	AIInstructions  string                 `json:"ai_instructions,omitempty"`
-	QualityTargets  *QualityTargets        `json:"quality_targets,omitempty"`
+	ProjectPath    string                 `json:"project_path"`
+	Language       string                 `json:"language"`
+	Framework      string                 `json:"framework,omitempty"`
+	ScanResults    *models.ScanResult     `json:"scan_results,omitempty"`
+	Issues         []models.Issue         `json:"issues,omitempty"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	AIInstructions string                 `json:"ai_instructions,omitempty"`
+	QualityTargets *QualityTargets        `json:"quality_targets,omitempty"`
 }
 
 // QualityTargets defines target quality metrics for AI-driven improvements
 type QualityTargets struct {
-	MinScore           float64            `json:"min_score"`
-	MaxIssues          int                `json:"max_issues"`
-	RequiredGrade      string             `json:"required_grade"`
-	FocusAreas         []string           `json:"focus_areas"`
-	CustomRules        map[string]string  `json:"custom_rules,omitempty"`
-	AIOptimizations    []AIOptimization   `json:"ai_optimizations,omitempty"`
+	MinScore        float64           `json:"min_score"`
+	MaxIssues       int               `json:"max_issues"`
+	RequiredGrade   string            `json:"required_grade"`
+	FocusAreas      []string          `json:"focus_areas"`
+	CustomRules     map[string]string `json:"custom_rules,omitempty"`
+	AIOptimizations []AIOptimization  `json:"ai_optimizations,omitempty"`
 }
 
 // AIOptimization represents AI-driven code improvements
 type AIOptimization struct {
-	Type        string  `json:"type"`
-	Description string  `json:"description"`
-	Impact      string  `json:"impact"`
-	Confidence  float64 `json:"confidence"`
-	Suggestion  string  `json:"suggestion"`
+	Type        string       `json:"type"`
+	Description string       `json:"description"`
+	Impact      string       `json:"impact"`
+	Confidence  float64      `json:"confidence"`
+	Suggestion  string       `json:"suggestion"`
 	FileChanges []FileChange `json:"file_changes,omitempty"`
 }
 
 // FileChange represents a suggested file modification
 type FileChange struct {
-	FilePath    string `json:"file_path"`
-	LineStart   int    `json:"line_start"`
-	LineEnd     int    `json:"line_end"`
-	OriginalCode string `json:"original_code"`
+	FilePath      string `json:"file_path"`
+	LineStart     int    `json:"line_start"`
+	LineEnd       int    `json:"line_end"`
+	OriginalCode  string `json:"original_code"`
 	SuggestedCode string `json:"suggested_code"`
-	Reasoning   string `json:"reasoning"`
+	Reasoning     string `json:"reasoning"`
 }
 
 // NewMCPClient creates a new MCP client for AI workflow integration
@@ -187,9 +187,9 @@ func (client *MCPClient) ValidateAIFixes(ctx context.Context, changes []FileChan
 		RequestType: "fix_validation",
 		Timestamp:   time.Now(),
 		Params: map[string]interface{}{
-			"changes":           changes,
-			"validation_level":  "strict",
-			"safety_checks":     true,
+			"changes":          changes,
+			"validation_level": "strict",
+			"safety_checks":    true,
 		},
 		Context: context,
 	}
@@ -210,30 +210,30 @@ func (client *MCPClient) ValidateAIFixes(ctx context.Context, changes []FileChan
 
 // ValidationResult represents the result of AI fix validation
 type ValidationResult struct {
-	IsValid       bool                   `json:"is_valid"`
-	SafetyScore   float64                `json:"safety_score"`
-	RiskLevel     string                 `json:"risk_level"`
-	Warnings      []ValidationWarning    `json:"warnings,omitempty"`
-	Recommendations []string             `json:"recommendations,omitempty"`
-	ValidatedChanges []FileChange         `json:"validated_changes"`
+	IsValid          bool                `json:"is_valid"`
+	SafetyScore      float64             `json:"safety_score"`
+	RiskLevel        string              `json:"risk_level"`
+	Warnings         []ValidationWarning `json:"warnings,omitempty"`
+	Recommendations  []string            `json:"recommendations,omitempty"`
+	ValidatedChanges []FileChange        `json:"validated_changes"`
 }
 
 // ValidationWarning represents a warning from AI fix validation
 type ValidationWarning struct {
-	Type        string `json:"type"`
-	Message     string `json:"message"`
-	Severity    string `json:"severity"`
-	FilePath    string `json:"file_path"`
-	LineNumber  int    `json:"line_number"`
+	Type       string `json:"type"`
+	Message    string `json:"message"`
+	Severity   string `json:"severity"`
+	FilePath   string `json:"file_path"`
+	LineNumber int    `json:"line_number"`
 }
 
 // sendRequest sends a request to the MCP service
 func (client *MCPClient) sendRequest(ctx context.Context, request *MCPRequest) (*MCPResponse, error) {
 	// In a real implementation, this would send HTTP requests to MCP services
 	// For now, we'll simulate responses for testing
-	
+
 	client.logger.Printf("Sending MCP request: %s (%s)", request.Method, request.ID)
-	
+
 	// Simulate processing time
 	select {
 	case <-ctx.Done():
@@ -253,7 +253,7 @@ func (client *MCPClient) sendRequest(ctx context.Context, request *MCPRequest) (
 	case "analyze_code_quality":
 		response.Result["analysis"] = map[string]interface{}{
 			"overall_score": 85.5,
-			"grade":        "B+",
+			"grade":         "B+",
 			"improvements": []string{
 				"Reduce code complexity in main functions",
 				"Add more comprehensive error handling",
@@ -285,9 +285,9 @@ func (client *MCPClient) sendRequest(ctx context.Context, request *MCPRequest) (
 		}
 	case "validate_ai_fixes":
 		response.Result["validation"] = ValidationResult{
-			IsValid:     true,
-			SafetyScore: 0.95,
-			RiskLevel:   "low",
+			IsValid:          true,
+			SafetyScore:      0.95,
+			RiskLevel:        "low",
 			ValidatedChanges: []FileChange{},
 		}
 	}
@@ -323,10 +323,10 @@ func GetQualityTargets(currentScore float64, currentGrade string) *QualityTarget
 	}
 
 	return &QualityTargets{
-		MinScore:      targetScore,
-		MaxIssues:     5, // Aim for 5 or fewer issues
-		RequiredGrade: getNextGrade(currentGrade),
-		FocusAreas:    []string{"security", "performance", "maintainability"},
+		MinScore:        targetScore,
+		MaxIssues:       5, // Aim for 5 or fewer issues
+		RequiredGrade:   getNextGrade(currentGrade),
+		FocusAreas:      []string{"security", "performance", "maintainability"},
 		AIOptimizations: []AIOptimization{},
 	}
 }
@@ -345,4 +345,23 @@ func getNextGrade(current string) string {
 		return next
 	}
 	return "A"
+}
+
+// CreateAnalysisRequest creates an analysis request for the given scan result
+func (client *MCPClient) CreateAnalysisRequest(scanResult *models.ScanResult, language string) *MCPRequest {
+	context := CreateProjectContext(scanResult, scanResult.ProjectPath, language)
+	targets := GetQualityTargets(scanResult.Summary.Score, scanResult.Summary.Grade)
+
+	return &MCPRequest{
+		ID:          utils.GenerateID(),
+		Method:      "analyze_code_quality",
+		RequestType: "quality_analysis",
+		Timestamp:   time.Now(),
+		Params: map[string]interface{}{
+			"scan_result": scanResult,
+			"language":    language,
+			"targets":     targets,
+		},
+		Context: context,
+	}
 }

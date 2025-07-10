@@ -5,19 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"kodevibe/internal/models"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAnalysisContextCreation(t *testing.T) {
-	result := &models.AnalysisResult{
-		OverallScore:  85.5,
-		FilesAnalyzed: 10,
-		LinesAnalyzed: 1000,
-		VibeResults: []models.VibeResult{
-			{Name: "security", Score: 90.0},
-			{Name: "performance", Score: 80.0},
-		},
+	scanResult := &models.ScanResult{
+		ID:           "test-scan",
+		ProjectPath:  "/test/project",
+		FilesScanned: 10,
 		Issues: []models.Issue{
 			{
 				File:     "test.go",
@@ -27,31 +24,39 @@ func TestAnalysisContextCreation(t *testing.T) {
 				Type:     models.VibeTypeSecurity,
 			},
 		},
+		Summary: models.ScanSummary{
+			Score: 85.5,
+			Grade: "B",
+		},
 	}
 
 	client := NewMCPClient("http://localhost:8080", "test-key")
-	request := client.CreateAnalysisRequest(result, "go")
+	request := client.CreateAnalysisRequest(scanResult, "go")
 
 	assert.NotNil(t, request)
-	assert.Equal(t, "analyze_code", request.Method)
+	assert.Equal(t, "analyze_code_quality", request.Method)
 	assert.NotNil(t, request.Context)
 	assert.Equal(t, "go", request.Context.Language)
 }
 
 func TestMCPRequest_WithTimeout(t *testing.T) {
 	client := NewMCPClient("http://localhost:8080", "test-key")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	result := &models.AnalysisResult{
-		OverallScore: 75.0,
-		Issues:       []models.Issue{},
+	scanResult := &models.ScanResult{
+		ID:     "test-scan",
+		Issues: []models.Issue{},
+		Summary: models.ScanSummary{
+			Score: 75.0,
+			Grade: "C",
+		},
 	}
 
-	request := client.CreateAnalysisRequest(result, "go")
+	request := client.CreateAnalysisRequest(scanResult, "go")
 	assert.NotNil(t, request)
-	
+
 	// Test context handling
 	select {
 	case <-ctx.Done():
