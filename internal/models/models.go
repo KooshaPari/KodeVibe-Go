@@ -4,6 +4,25 @@ import (
 	"time"
 )
 
+// AnalysisResult represents the complete analysis results
+type AnalysisResult struct {
+	OverallScore    float64      `json:"overall_score"`
+	FilesAnalyzed   int          `json:"files_analyzed"`
+	LinesAnalyzed   int          `json:"lines_analyzed"`
+	Duration        time.Duration `json:"duration"`
+	VibeResults     []VibeResult `json:"vibe_results"`
+	Issues          []Issue      `json:"issues"`
+	Recommendations []string     `json:"recommendations"`
+	Timestamp       time.Time    `json:"timestamp"`
+}
+
+// VibeResult represents the result of a specific vibe analysis
+type VibeResult struct {
+	Name    string  `json:"name"`
+	Score   float64 `json:"score"`
+	Details string  `json:"details,omitempty"`
+}
+
 // SeverityLevel represents the severity of an issue
 type SeverityLevel string
 
