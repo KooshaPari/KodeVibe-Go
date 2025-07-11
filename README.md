@@ -2,9 +2,21 @@
 
 **The Ultimate Code Quality Guardian** - A high-performance, comprehensive code quality tool built in Go that prevents bad vibes from entering your codebase.
 
-## ✅ Production Status
+## 📸 Demo
 
-![KodeVibe Basic Usage Demo](docs/screenshots/kodevibe-basic-usage.gif)
+![KodeVibe Demo](docs/screenshots/kodevibe-demo.gif)
+
+*Interactive demo showing KodeVibe's scanning interface and features*
+
+![Terminal Demo](docs/screenshots/kodevibe-terminal-demo.gif)
+
+*Terminal demo showing daemon startup and API usage*
+
+![TUI Interface](docs/screenshots/kodevibe-tui-interface.png)
+
+*Real-time TUI interface with live status monitoring*
+
+## ✅ Production Status
 
 **KodeVibe is production-ready!** All core components have been thoroughly tested and verified:
 
@@ -68,41 +80,41 @@ make install-local  # Installs to ~/.local/bin/
 ### Basic Commands
 
 ```bash
-# Start scanning current directory
+# Start TUI panel in current directory
 kodevibe scan .
 
-# Scan specific directory
+# Start TUI panel in specific directory
 kodevibe scan /path/to/project
 
-# Scan with multiple vibes
-kodevibe scan --vibes security,code,performance
+# Multi-directory monitoring
+kodevibe watch ~/projects/app1 ~/projects/app2
 
 # Get current status (JSON)
 kodevibe status
 
-# Force manual scan of all vibes
+# Force manual run of all vibes
 kodevibe scan --all
 
-# Start file watcher daemon
-kodevibe watch --port 8080
+# Start background daemon
+kodevibe daemon --port 8080
 ```
 
-### Scanning Commands
+### Vibe Commands
 
-![KodeVibe Scanning Integration](docs/screenshots/kodevibe-scanning.gif)
+![KodeVibe Vibe Integration](docs/screenshots/kodevibe-vibes.gif)
 
 ```bash
-# Check specific vibe types
+# Check security vibe status
 kodevibe scan --vibes security
 
-# View scan results
-kodevibe status
+# View authentication status
+kodevibe auth --status
 
-# Setup auto-fix for issues
-kodevibe fix --auto
+# Setup auto-fix configuration
+kodevibe fix --init
 
-# Clear scan history
-kodevibe clean
+# Clear scan cache
+kodevibe cache --clear
 ```
 
 ### Git Hooks Setup
@@ -117,12 +129,12 @@ kodevibe hooks install
 kodevibe hooks test
 ```
 
-### KodeVibe Watcher Interface
+### Watcher Interface
 
-Monitor your project with a unified vibe analysis display:
+Monitor multiple projects with a unified vibe display:
 
 ```bash
-# Watch multiple directories
+# Monitor multiple directories
 kodevibe watch ~/projects/app1 ~/projects/app2 ~/projects/api
 
 # Auto-discover projects with .kodevibe configurations
