@@ -4,7 +4,7 @@
 
 ## ✅ Production Status
 
-![KodeVibe Overview](docs/screenshots/kodevibe-overview.png)
+![KodeVibe Basic Usage Demo](docs/screenshots/kodevibe-basic-usage.gif)
 
 **KodeVibe is production-ready!** All core components have been thoroughly tested and verified:
 
@@ -61,23 +61,48 @@ sudo make install
 make install-local  # Installs to ~/.local/bin/
 ```
 
-## 🎯 Quick Start
+## 📋 Usage
 
-![KodeVibe Demo](docs/screenshots/kodevibe-demo.gif)
+![KodeVibe Basic Usage Demo](docs/screenshots/kodevibe-basic-usage.gif)
 
-### Basic Scanning
+### Basic Commands
+
 ```bash
-# Scan current directory
-kodevibe scan
+# Start scanning current directory
+kodevibe scan .
 
-# Scan with specific vibes
+# Scan specific directory
+kodevibe scan /path/to/project
+
+# Scan with multiple vibes
 kodevibe scan --vibes security,code,performance
 
-# Scan specific paths
-kodevibe scan src/ tests/ --exclude node_modules/
+# Get current status (JSON)
+kodevibe status
 
-# CI/CD mode
-kodevibe scan --ci --strict --format junit --output results.xml
+# Force manual scan of all vibes
+kodevibe scan --all
+
+# Start file watcher daemon
+kodevibe watch --port 8080
+```
+
+### Scanning Commands
+
+![KodeVibe Scanning Integration](docs/screenshots/kodevibe-scanning.gif)
+
+```bash
+# Check specific vibe types
+kodevibe scan --vibes security
+
+# View scan results
+kodevibe status
+
+# Setup auto-fix for issues
+kodevibe fix --auto
+
+# Clear scan history
+kodevibe clean
 ```
 
 ### Git Hooks Setup
@@ -92,15 +117,33 @@ kodevibe hooks install
 kodevibe hooks test
 ```
 
-### File Watching
-![File Watching Demo](docs/screenshots/kodevibe-file-watching.gif)
+### KodeVibe Watcher Interface
+
+Monitor your project with a unified vibe analysis display:
 
 ```bash
-# Watch for changes and scan automatically
-kodevibe watch src/ --auto-fix --vibes security,code
+# Watch multiple directories
+kodevibe watch ~/projects/app1 ~/projects/app2 ~/projects/api
 
-# Watch with specific configuration
-kodevibe watch . --vibes all
+# Auto-discover projects with .kodevibe configurations
+kodevibe watch ~/projects
+```
+
+![KodeVibe Watcher Interface Demo](docs/screenshots/kodevibe-watcher-interface.gif)
+
+**Output:**
+```
+KodeVibe Status - 2025-07-11 14:14:00
+Directories: 3 | Vibes: 7 | Passed: 15 | Failed: 4
+
+DIRECTORY           SECURITY    CODE        PERF        FILE        GIT         DEPS        DOCS        
+------------------------------------------------------------------------------------------
+app1                ✓           ✓           ✗(5)        ✓           ✓           ✓           ✗(2)        
+app2                ✗(12)       ✓           ✓           ✗(3)        ✓           ✗(1)        ✓           
+api                 ✓           ✗(3)        ✓           ✓           ✓           ✓           ✓           
+
+Legend: ✓ = Passed, ✗ = Failed, ERR = Error, (-) = Not applicable
+Numbers in parentheses show issue count
 ```
 
 ### Auto-Fix
@@ -115,43 +158,113 @@ kodevibe fix --rules no-console-log,strict-equality
 kodevibe fix src/
 ```
 
-### HTTP Server & Real-time Dashboard
-![Dashboard Demo](docs/screenshots/kodevibe-dashboard-demo.gif)
+### TUI Panel Controls
 
+- **q** - Quit
+- **r** - Refresh/Manual scan
+- **h** - Show help
+- **s** - Switch to status view
+- **l** - Switch to logs view
+- **↑/↓** - Navigate (in history/logs)
+
+## 🌐 HTTP API for AI Agents
+
+When running in daemon mode, the following endpoints are available:
+
+- `GET /quick` - Ultra-fast health check (just "ok")
+- `GET /status` - Full JSON status including all vibes
+- `GET /status/compact` - Single-line status: `SECURITY:✓0 CODE:✗5 PERF:✓0 FILE:✓`
+- `POST /scan` - Trigger manual scan
+- `GET /history` - Scan execution history
+- `GET /metrics` - Performance metrics
+
+### AI Agent Integration
+
+**Quick Status Check:**
 ```bash
-# Start server
-kodevibe server --port 8080
-
-# Start with TLS
-kodevibe server --tls --cert cert.pem --key key.pem
-
-# Start server in background
-nohup kodevibe server &
+curl -s http://localhost:8080/status/compact
+# Output: SECURITY:✓0 CODE:✗5 PERF:✓0 FILE:✓ GIT:✓ DEPS:✗2 DOCS:✓
 ```
 
-### Interactive Terminal Interface
-![Terminal Demo](docs/screenshots/kodevibe-terminal-demo.gif)
+**Before Running Commands:**
+```bash
+# Check if project is healthy before running
+status=$(curl -s http://localhost:8080/quick)
+if [ "$status" = "ok" ]; then
+    echo "Project vibes are good, proceeding..."
+else
+    echo "Project has bad vibes, checking details..."
+    curl -s http://localhost:8080/status | jq .
+fi
+```
 
-KodeVibe provides a rich interactive CLI experience with colorized output, progress indicators, and real-time feedback.
+## 📊 Vibes Monitored
 
-## 🎬 Live Demonstrations
+### Standard Vibes
+- **SecurityVibe** - Secret detection, vulnerability scanning, entropy analysis
+- **CodeVibe** - Code quality, anti-patterns, complexity analysis
+- **PerformanceVibe** - Performance issues, memory leaks, N+1 queries
+- **FileVibe** - File organization, junk files, large files
+- **GitVibe** - Commit quality, branch naming, merge conflicts
+- **DependencyVibe** - Outdated packages, vulnerabilities, license compliance
+- **DocumentationVibe** - Missing docs, outdated documentation
 
-### 🔄 Real-time Code Analysis
-See KodeVibe in action with live file watching, instant issue detection, and automatic fixes:
+## 📄 Output Formats
 
-| Feature | Demo |
-|---------|------|
-| **Main Interface** | ![KodeVibe Demo](docs/screenshots/kodevibe-demo.gif) |
-| **File Watching** | ![File Watching](docs/screenshots/kodevibe-file-watching.gif) |
-| **Terminal Interface** | ![Terminal Demo](docs/screenshots/kodevibe-terminal-demo.gif) |
-| **Dashboard** | ![Dashboard Demo](docs/screenshots/kodevibe-dashboard-demo.gif) |
+### JSON Status (with All Vibes)
+```json
+{
+  "directory": "/path/to/project",
+  "timestamp": "2025-07-11T14:14:00Z",
+  "vibes": {
+    "security": {
+      "passed": true,
+      "issue_count": 0,
+      "duration": "1.2s"
+    },
+    "code": {
+      "passed": false,
+      "issue_count": 5,
+      "duration": "0.8s"
+    },
+    "performance": {
+      "passed": true,
+      "issue_count": 0,
+      "duration": "2.1s"
+    },
+    "file": {
+      "passed": true,
+      "issue_count": 0,
+      "duration": "0.3s"
+    },
+    "git": {
+      "passed": true,
+      "issue_count": 0,
+      "duration": "0.4s"
+    },
+    "dependency": {
+      "passed": false,
+      "issue_count": 2,
+      "duration": "1.8s"
+    },
+    "documentation": {
+      "passed": true,
+      "issue_count": 0,
+      "duration": "0.6s"
+    }
+  }
+}
+```
 
-### ✨ Key Features Demonstrated
-- 🔍 **Instant Analysis**: Real-time code quality scanning
-- 🛠️ **Auto-Fix**: Intelligent issue resolution
-- 📊 **Live Dashboard**: WebSocket-powered monitoring
-- 🎨 **Interactive UI**: Professional CLI experience
-- ⚡ **File Watching**: Continuous monitoring with live updates
+### Compact Status
+```
+SECURITY:✓0 CODE:✗5 PERF:✓0 FILE:✓0 GIT:✓0 DEPS:✗2 DOCS:✓0
+```
+
+- **✓** = Passed
+- **✗** = Failed  
+- **ERR** = Error
+- **Number** = Issue count (errors/warnings/failures)
 
 ## ⚙️ Configuration
 
